@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend — lint, tests, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: psychometric-ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: psychometric-ai/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  frontend:
+    name: Frontend — typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+
+  postgres-integration:
+    name: Backend on PostgreSQL (live suites)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: psychometric-ai
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: psych
+          POSTGRES_PASSWORD: citest
+          POSTGRES_DB: psychometric_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U psych"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_DRIVER: postgres
+      DATABASE_URL: postgres://psych:citest@127.0.0.1:5432/psychometric_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: psychometric-ai/package-lock.json
+      - run: npm ci
+      # Each suite expects a FRESH database — recreate between runs.
+      - name: Live suite A (auth, RBAC, lifecycle, security)
+        run: |
+          PGPASSWORD=citest psql -h 127.0.0.1 -U psych -c "DROP DATABASE IF EXISTS verify_a;" -c "CREATE DATABASE verify_a;"
+          DATABASE_URL=postgres://psych:citest@127.0.0.1:5432/verify_a node scripts/final-verify-live-a.js
+      - name: Live suite B (LLM boundary, reports, parent/admin journeys)
+        run: |
+          PGPASSWORD=citest psql -h 127.0.0.1 -U psych -c "DROP DATABASE IF EXISTS verify_b;" -c "CREATE DATABASE verify_b;"
+          DATABASE_URL=postgres://psych:citest@127.0.0.1:5432/verify_b node scripts/final-verify-live-b.js

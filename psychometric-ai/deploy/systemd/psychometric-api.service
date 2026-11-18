@@ -1,0 +1,39 @@
+# Psychometric AI API — systemd unit (bare-metal / VM deployment without Docker).
+# Install: sudo cp deploy/systemd/psychometric-api.service /etc/systemd/system/
+#          sudo systemctl daemon-reload && sudo systemctl enable --now psychometric-api
+
+[Unit]
+Description=Psychometric AI deterministic assessment API
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=psych
+Group=psych
+WorkingDirectory=/opt/psychometric-ai
+EnvironmentFile=/opt/psychometric-ai/.env
+ExecStart=/usr/bin/node backend/src/server.js
+Restart=always
+RestartSec=3
+TimeoutStopSec=15
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/psychometric-ai/data
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+# Logging → journald (journalctl -u psychometric-api -f)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=psychometric-api
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Psychometric AI — Grade 10 Stream & Career Guidance</title>
+  <meta name="description" content="Educational guidance platform for Grade 10 students: deterministic psychometric scoring, stream fit analysis, and parent-student alignment. Guidance only — not a clinical evaluation.">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/candidate.css">
+  <link rel="stylesheet" href="css/parent.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/print-report.css">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-area" data-act="Ui:goLanding">
+        <div class="logo-icon">🧭</div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="logo-text">Psychometric AI</span>
+            <span class="logo-tag">Grade 10 Guidance</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#view-landing" class="nav-btn">Home</a>
+        <a href="#view-candidate" class="nav-btn">Student Portal</a>
+        <a href="#view-parent" class="nav-btn">Parent Portal</a>
+        <a href="#view-admin" class="nav-btn">Admin</a>
+      </nav>
+
+      <div id="header-auth-area"></div>
+    </div>
+  </header>
+
+  <main class="app-content">
+
+    <!-- 1. LANDING -->
+    <section id="view-landing" style="display: block;">
+      <div class="hero-section">
+        <div class="hero-pill">
+          <span>✨</span> Deterministic scoring • LLM only explains • Educational guidance, not diagnosis
+        </div>
+        <h1 class="hero-title">
+          Grade 10 stream decisions, <br>
+          <span class="gradient-text">grounded in evidence — explored together</span>
+        </h1>
+        <p class="hero-subtitle">
+          Measure reasoning skills, RIASEC interests, and work style with a transparent deterministic engine.
+          Then align family expectations through a neutral parent–student congruence view.
+        </p>
+
+        <div class="hero-cta">
+          <button class="btn btn-primary btn-lg" data-act="Auth:openRegisterModal">
+            🎯 Start as a Student
+          </button>
+          <button class="btn btn-accent btn-lg" data-act="Auth:openRegisterModal">
+            🤝 Start as a Parent
+          </button>
+          <button class="btn btn-secondary btn-lg" data-act="Auth:openLoginModal">
+            Sign In
+          </button>
+        </div>
+
+        <div class="demo-bar">
+          <div class="demo-title">DEMO SANDBOX — seeded demo accounts only (never production data)</div>
+          <div class="demo-btns">
+            <button class="btn btn-sm btn-secondary" data-act="Auth:quickLoginDemo" data-args='["candidate"]'>👨‍🎓 DEMO Student</button>
+            <button class="btn btn-sm btn-secondary" data-act="Auth:quickLoginDemo" data-args='["parent"]'>👩‍👦 DEMO Parent</button>
+            <button class="btn btn-sm btn-secondary" data-act="Auth:quickLoginDemo" data-args='["admin"]'>🛡️ DEMO Admin</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">📐</div>
+          <h3>1. Cognitive Aptitude</h3>
+          <p>Six reasoning dimensions — numerical, abstract, verbal, spatial, logical, and data interpretation — reported as normalized indices (0-100).</p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon" style="background: rgba(236, 72, 153, 0.15); color: #f472b6;">🎨</div>
+          <h3>2. RIASEC Interests</h3>
+          <p>Holland interest profile with a transparent three-letter code and deterministic, documented tie-breaking.</p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">⚡</div>
+          <h3>3. Work Style</h3>
+          <p>Seven study-habit indicators — persistence, focus, conscientiousness, curiosity, deliberate practice, stress resilience, and response to setbacks.</p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">🤝</div>
+          <h3>4. Parent–Student Alignment</h3>
+          <p>A neutral congruence view comparing the student's measured profile with parental expectations — the platform takes no side, and students approve access.</p>
+        </div>
+      </div>
+
+      <div class="glass-card" style="margin-top: 48px; border-color: var(--border-accent);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <span class="role-pill role-admin" style="margin-bottom: 8px; display: inline-block;">Architecture</span>
+            <h3 style="font-size: 1.4rem; margin-bottom: 8px;">Deterministic engine vs LLM explanation layer</h3>
+            <p style="color: var(--text-secondary); max-width: 780px; font-size: 0.95rem;">
+              The LLM <strong>never</strong> calculates scores, ranks, or bands. All math runs in deterministic backend engines
+              with versioned, database-driven weights. The LLM only receives the final structured JSON and writes plain-language
+              explanations — and its output is sanitized before display.
+            </p>
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--success); background: rgba(16, 185, 129, 0.1); padding: 8px 16px; border-radius: var(--radius-md); border: 1px solid rgba(16, 185, 129, 0.3);">
+            ✓ No fabricated scores — missing data stays "not available"
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. CANDIDATE -->
+    <section id="view-candidate" style="display: none;"></section>
+    <!-- 3. PARENT -->
+    <section id="view-parent" style="display: none;"></section>
+    <!-- 4. ADMIN -->
+    <section id="view-admin" style="display: none;"></section>
+    <!-- 5. REPORT -->
+    <section id="view-report" style="display: none;"></section>
+
+  </main>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-card" id="modal-content"></div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="js/secureRender.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/candidateView.js"></script>
+  <script src="js/parentView.js"></script>
+  <script src="js/adminView.js"></script>
+  <script src="js/reportView.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

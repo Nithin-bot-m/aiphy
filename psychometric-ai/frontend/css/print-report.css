@@ -1,0 +1,59 @@
+/* High-Fidelity Printable & PDF Export Stylesheet */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+  }
+
+  .app-header,
+  .nav-btn,
+  .hero-cta,
+  .demo-bar,
+  .assessment-nav,
+  .btn,
+  #toast-container,
+  .no-print {
+    display: none !important;
+  }
+
+  .app-content {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .glass-card, .question-card, .results-header-banner, .stream-card, .chart-card {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    backdrop-filter: none !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #0f172a !important;
+  }
+
+  .gradient-text {
+    -webkit-text-fill-color: #1e293b !important;
+  }
+
+  .stream-recommendation-card {
+    border: 1px solid #94a3b8 !important;
+    margin: 12px 0 !important;
+    padding: 12px !important;
+  }
+
+  .report-print-header {
+    display: block !important;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 12px;
+  }
+}
+
+.report-print-header {
+  display: none;
+}

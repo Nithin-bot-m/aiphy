@@ -1,0 +1,14 @@
+# Keep Docker build context small and secret-free.
+node_modules
+**/node_modules
+.next
+.open-next
+.git
+.env
+**/.env
+**/data
+**/*.db
+*.log
+**/*.log
+psychometric-ai/data
+psychometric-ai/node_modules

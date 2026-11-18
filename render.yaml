@@ -1,0 +1,54 @@
+# ---------------------------------------------------------------------------
+# Render Blueprint — the WHOLE product as ONE web service + ONE database.
+#
+# Deploy (no CLI needed):
+#   1. Push this project to a GitHub/GitLab repo.
+#   2. https://dashboard.render.com → New + → Blueprint → pick the repo.
+#   3. Render reads this file, creates the service + Postgres, and asks for
+#      the sync:false variables (GEMINI_API_KEY — paste it or leave empty).
+#   4. First deploy auto-runs migrations (and seeds demo data, see below).
+#
+# After the FIRST deploy you can flip SEED_DEMO_DATA to "false" in the
+# dashboard so real deployments start clean (demo accounts are flagged
+# is_demo either way).
+# ---------------------------------------------------------------------------
+services:
+  - type: web
+    name: psychometric-app
+    runtime: docker
+    dockerfilePath: ./Dockerfile.all-in-one
+    plan: free                      # 512 MB, spins down when idle (~50s cold start). Use "starter" for always-on.
+    healthCheckPath: /api/health    # exercises web AND api (proxied)
+    autoDeploy: true                # redeploy on every git push
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_DRIVER
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: psychometric-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true         # Render generates and stores a strong secret
+      # --- LLM narrative layer (Gemini) ---
+      - key: LLM_PROVIDER
+        value: auto
+      - key: LLM_MODEL
+        value: gemini-3.8-flash     # 2.0-flash was retired by Google
+      - key: GEMINI_API_KEY
+        sync: false                 # prompted at deploy: paste your key, or leave blank = offline narratives
+      - key: LLM_DAILY_MAX_REQUESTS
+        value: "20"                 # Gemini free tier: 20 requests/day, 1 report = 1-3 calls
+      # --- OTP ---
+      - key: OTP_PROVIDER
+        value: console              # DEV ONLY: real registrations need twilio/smtp/webhook
+      # --- Demo data ---
+      - key: SEED_DEMO_DATA
+        value: "true"               # first deploy convenience; set "false" before real students join
+
+databases:
+  - name: psychometric-db
+    databaseName: psychometric
+    user: psych
+    plan: free                      # free Postgres expires after 30 days — upgrade to basic-256 for real use

@@ -1,0 +1,13 @@
+# Data-retention job — DPDP Act 2023 §8(7) schedule enforcement.
+# Runs daily at 03:17 Asia/Kolkata (configurable). Pair with the .timer unit.
+
+[Unit]
+Description=Psychometric AI — data retention job
+
+[Service]
+Type=oneshot
+User=psych
+WorkingDirectory=/opt/psychometric-ai
+EnvironmentFile=/opt/psychometric-ai/.env
+ExecStart=/usr/bin/node backend/scripts/retention.js
+SyslogIdentifier=psychometric-retention

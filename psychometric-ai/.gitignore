@@ -1,0 +1,27 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Databases (never commit; demo data may contain PII-like content)
+*.db
+*.db-wal
+*.db-shm
+data/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Test artifacts
+coverage/
+*.log
+
+# Build artifacts
+build-manifest.json

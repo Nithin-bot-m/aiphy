@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------
+# Psychometric AI — ALL-IN-ONE production container.
+#
+# One image = Next.js frontend (standalone) + Express psychometric API.
+# Designed for platforms that host "everything in one service" with a
+# managed PostgreSQL: Render, Railway, Fly.io, Koyeb, any Docker host.
+#
+#   web -> $PORT (public, set by the platform, default 3000)
+#   api -> 127.0.0.1:4000 internal, reached by the Next.js /api proxy
+#
+# Required env at runtime:  DB_DRIVER=postgres  DATABASE_URL=...  JWT_SECRET=...
+# Optional: GEMINI_API_KEY, LLM_MODEL (default gemini-3.8-flash),
+#           SEED_DEMO_DATA (true only for the first explore-deploy).
+# Migrations run automatically on every boot (backend/src/server.js).
+# ---------------------------------------------------------------------
+
+# ---- Stage 1: frontend dependencies ----
+FROM node:24-slim AS fe-deps
+WORKDIR /app
+COPY package.json package-lock.json* bun.lock* ./
+RUN npm install --no-audit --no-fund
+
+# ---- Stage 2: frontend build (standalone output) ----
+FROM node:24-slim AS fe-build
+WORKDIR /app
+COPY --from=fe-deps /app/node_modules ./node_modules
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+# npm run build also copies static/ + public/ INTO .next/standalone/
+RUN npm run build || npx next build
+
+# ---- Stage 3: backend production dependencies ----
+FROM node:24-slim AS be-deps
+WORKDIR /api
+COPY psychometric-ai/package.json psychometric-ai/package-lock.json* ./
+RUN npm ci --omit=dev || npm install --omit=dev --no-audit --no-fund
+
+# ---- Stage 4: runtime (non-root) ----
+FROM node:24-slim AS runtime
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000
+WORKDIR /app
+RUN groupadd -r app && useradd -r -g app app
+# Frontend standalone bundle (its trimmed node_modules ships inside).
+COPY --from=fe-build /app/.next/standalone ./
+# Backend source + production deps (merged next to the standalone bundle;
+# the two dependency sets do not overlap).
+COPY --from=be-deps /api/node_modules ./node_modules
+COPY psychometric-ai/backend ./backend
+COPY deploy/start-all.sh ./start-all.sh
+RUN mkdir -p /app/data && chown -R app:app /app
+USER app
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["sh", "start-all.sh"]

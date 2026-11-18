@@ -1,0 +1,34 @@
+// Cloudflare Workers config — Next.js product frontend via @opennextjs/cloudflare.
+//
+// The browser talks to same-origin /api/*; the Next route handler
+// (src/app/api/[...path]/route.ts) forwards server-side to the Express
+// psychometric backend. ONLY this URL is Cloudflare-specific:
+//
+//   PSYCHOMETRIC_BACKEND_URL — where the deterministic backend runs.
+//     It CANNOT run on Workers (Express + node:sqlite are Node-only), so run it
+//     on a small container host (VPS compose / Railway / Fly) + Neon Postgres.
+//     See DEPLOYMENT-CLOUDFLARE.md §2 for the three supported placements.
+//
+// Deploy:  npx wrangler login  →  npm run deploy:cf
+// Secrets: npx wrangler secret put ... (none required by the frontend itself)
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "psychometric-ai-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    // Dev placeholder — override with your real backend URL before/after deploy:
+    //   npx wrangler secret put PSYCHOMETRIC_BACKEND_URL   (or edit vars + redeploy)
+    "PSYCHOMETRIC_BACKEND_URL": "http://127.0.0.1:4000"
+  }
+  // Custom domain (optional): uncomment and set, or bind in the dashboard.
+  // "routes": [{ "pattern": "app.your-domain.in", "custom_domain": true }]
+}

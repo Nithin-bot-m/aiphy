@@ -1,0 +1,44 @@
+{
+  "name": "psychometric-ai",
+  "version": "2.0.0",
+  "description": "Grade 10 educational stream & career guidance platform - deterministic psychometric engine + LLM explanation layer",
+  "main": "backend/src/server.js",
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "dev": "node backend/src/server.js",
+    "migrate": "node backend/src/migrations/migrate.js",
+    "seed": "node backend/seeds/runSeed.js",
+    "test": "node --test backend/tests/unit/*.test.js backend/tests/integration/*.test.js backend/tests/security/*.test.js",
+    "test:unit": "node --test \"backend/tests/unit/*.test.js\"",
+    "test:integration": "node --test \"backend/tests/integration/*.test.js\"",
+    "test:security": "node --test \"backend/tests/security/*.test.js\"",
+    "lint": "eslint backend/src backend/seeds backend/tests frontend/js scripts",
+    "build": "node scripts/build.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^7.0.11",
+    "pg": "^8.19.0"
+  },
+  "optionalDependencies": {
+    "@sentry/node": "^10.32.1",
+    "ioredis": "^5.8.2",
+    "rate-limit-redis": "^4.2.3"
+  },
+  "devDependencies": {
+    "embedded-postgres": "^18.4.0-beta.17",
+    "eslint": "^9.39.5",
+    "globals": "^17.12.0"
+  }
+}
