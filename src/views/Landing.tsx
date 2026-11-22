@@ -179,7 +179,7 @@ export default function Landing() {
                 </Button>
                 <a
                   href="#how"
-                  className="h-12 px-6 inline-flex items-center rounded-[12px] border border-line-2 bg-surface text-[15.5px] font-semibold text-ink hover:border-ink-3 transition-colors"
+                  className="h-12 px-6 inline-flex items-center rounded-[12px] border border-line-2 bg-surface text-[15.5px] font-semibold text-ink hover:border-ink-3 active:scale-[0.98] transition-all"
                 >
                   How it works
                 </a>
@@ -306,7 +306,7 @@ export default function Landing() {
               </Button>
               <a
                 href="#how"
-                className="h-12 px-6 inline-flex items-center rounded-[12px] border border-[#33474333] text-[15.5px] font-semibold text-[#F3F1EA] hover:bg-[#1E3B37] transition-colors"
+                className="h-12 px-6 inline-flex items-center rounded-[12px] border border-[#33474333] text-[15.5px] font-semibold text-[#F3F1EA] hover:bg-[#1E3B37] active:scale-[0.98] transition-all"
               >
                 See how it works
               </a>

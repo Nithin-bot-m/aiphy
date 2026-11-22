@@ -78,7 +78,7 @@ export function Button({
     <button
       {...rest}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center font-semibold transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 ${BTN_VARIANT[variant]} ${BTN_SIZE[size]} ${className}`}
+      className={`inline-flex items-center justify-center font-semibold transition-all duration-150 active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100 ${BTN_VARIANT[variant]} ${BTN_SIZE[size]} ${className}`}
     >
       {loading && <Spinner className="mr-0.5" />}
       {children}
@@ -428,7 +428,7 @@ export function Field({
 }
 
 const INPUT_CLASS =
-  "w-full h-11 px-3.5 rounded-[10px] border bg-surface text-[14.5px] text-ink placeholder:text-ink-3 transition-colors duration-150 focus:border-brand focus:outline-none";
+  "w-full h-11 px-3.5 rounded-[10px] border bg-surface text-[14.5px] text-ink placeholder:text-ink-3 transition-all duration-150 focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none";
 
 export function Input({
   invalid,

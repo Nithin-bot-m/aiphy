@@ -44,20 +44,20 @@
   --surface-sunken: #f1efe8;
   --surface-inverse: #14211f; /* deep teal-ink (hero panel, admin rail) */
   --text-primary: #181c1f;
-  --text-secondary: #57606a;
-  --text-tertiary: #8b939b;
-  --border: #e7e4dc;
-  --border-strong: #d7d3c8;
+  --text-secondary: #525a64;
+  --text-tertiary: #5d666f; /* WCAG AA 4.5:1+ compliant against #f7f6f2 and #ffffff */
+  --border: #e2ded5;
+  --border-strong: #c8c3b5;
   --accent: #0e7268; /* deep teal — calm, trustworthy */
   --accent-strong: #0a5a52;
   --accent-soft: #e2efec;
   --accent-softer: #f0f6f4;
   --on-accent: #ffffff;
-  --success: #1e7a48;
+  --success: #1b6d40;
   --success-soft: #e2f2e9;
-  --warning: #96660f;
+  --warning: #855b0a;
   --warning-soft: #f8eed9;
-  --danger: #ae4437;
+  --danger: #a53d30;
   --danger-soft: #f9e8e4;
 
   /* --- scale ---------------------------------------------- */

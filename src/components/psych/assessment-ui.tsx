@@ -102,7 +102,7 @@ export function QuestionNavigator({
                     onClick={() => onJump(i)}
                     aria-label={`Go to question ${i + 1}${answered ? " (answered)" : ""}`}
                     aria-current={isCurrent ? "true" : undefined}
-                    className={`tnum w-7.5 h-7.5 min-w-[30px] min-h-[30px] rounded-[8px] text-[11.5px] font-bold transition-all cursor-pointer ${
+                    className={`tnum w-8.5 h-8.5 min-w-[34px] min-h-[34px] sm:min-w-[32px] sm:min-h-[32px] rounded-[8px] text-[12px] font-bold flex items-center justify-center transition-all cursor-pointer ${
                       isCurrent
                         ? "bg-ink text-[#F3F1EA] ring-2 ring-ink-3/30"
                         : answered

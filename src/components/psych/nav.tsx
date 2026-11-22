@@ -164,7 +164,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         </header>
 
-        <main id="main" className="flex-1 min-w-0">
+        <main id="main" className="flex-1 min-w-0 pb-20 lg:pb-0">
           {children}
         </main>
 

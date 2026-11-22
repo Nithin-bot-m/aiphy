@@ -333,6 +333,21 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
                         {otpSent ? (otpCountdown > 0 ? `Resend (${otpCountdown}s)` : "Resend") : "Send code"}
                       </Button>
                     </div>
+                    {otpSent && (
+                      <div className="mt-1.5 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOtpSent(false);
+                            setOtpCountdown(0);
+                            setOtpCode("");
+                          }}
+                          className="text-[12px] font-medium text-brand hover:underline cursor-pointer"
+                        >
+                          Change phone number
+                        </button>
+                      </div>
+                    )}
                   </Field>
 
                   {otpSent && (
@@ -343,9 +358,10 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
                         maxLength={6}
                         value={otpCode}
                         onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                        placeholder="123456"
+                        placeholder="······"
                         required
                         autoFocus
+                        className="font-mono tracking-[0.3em] text-center text-[18px] font-bold"
                       />
                     </Field>
                   )}
