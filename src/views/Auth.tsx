@@ -47,11 +47,15 @@ function AuthAside() {
 }
 
 export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register"; sessionExpired: boolean }) {
-  const { signIn, signUp, pushToast } = useApp();
+  const { signIn, signInWithOtp, signUp, pushToast } = useApp();
   const [, navigate] = useRoute();
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [role, setRole] = useState<"candidate" | "parent">("candidate");
+  const [loginMethod, setLoginMethod] = useState<"password" | "otp">("password");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpCountdown, setOtpCountdown] = useState(0);
   const [fields, setFields] = useState({
     identifier: "",
     password: "",
@@ -68,7 +72,15 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
   useEffect(() => {
     setFormError(null);
     setErrors({});
-  }, [mode]);
+    setOtpSent(false);
+    setOtpCode("");
+  }, [mode, loginMethod]);
+
+  useEffect(() => {
+    if (otpCountdown <= 0) return;
+    const t = window.setTimeout(() => setOtpCountdown((c) => c - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [otpCountdown]);
 
   const set = (k: string, v: string) => setFields((f) => ({ ...f, [k]: v }));
 
@@ -96,6 +108,52 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
       afterAuth(u.role);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Couldn't sign in. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doSendOtp = async () => {
+    const phone = fields.phone.trim();
+    if (!phone) {
+      setFormError("Please enter your registered mobile number.");
+      return;
+    }
+    setFormError(null);
+    setBusy(true);
+    try {
+      const { api } = await import("@/lib/api");
+      const res = await api.auth.sendOtp(phone);
+      setOtpSent(true);
+      setOtpCountdown(60);
+      pushToast(res.message || "Verification code sent.", "success");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not send verification code. Try password login.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const doOtpLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const phone = fields.phone.trim();
+    const code = otpCode.trim();
+    if (!phone) {
+      setFormError("Please enter your mobile number.");
+      return;
+    }
+    if (!code || code.length !== 6) {
+      setFormError("Please enter the 6-digit verification code.");
+      return;
+    }
+    setFormError(null);
+    setBusy(true);
+    try {
+      const u = await signInWithOtp(phone, code);
+      pushToast("Welcome back.", "success");
+      afterAuth(u.role);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Invalid verification code.");
     } finally {
       setBusy(false);
     }
@@ -188,38 +246,122 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
           )}
 
           {mode === "login" ? (
-            <form onSubmit={doLogin} className="mt-6" noValidate>
-              <Field label="Email or phone" htmlFor="identifier" required>
-                <Input
-                  id="identifier"
-                  name="identifier"
-                  autoComplete="username"
-                  value={fields.identifier}
-                  onChange={(e) => set("identifier", e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                />
-              </Field>
-              <Field label="Password" htmlFor="password" required error={errors.password}>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={fields.password}
-                  onChange={(e) => set("password", e.target.value)}
-                  required
-                />
-              </Field>
-              {formError && (
-                <p role="alert" className="mb-4 rounded-[10px] bg-bad-soft border border-[#EFCFC9] px-4 py-3 text-[13.5px] text-bad font-medium">
-                  {formError}
-                </p>
+            <div className="mt-6">
+              <div className="flex border-b border-line-2 mb-5" role="tablist" aria-label="Sign in method">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={loginMethod === "password"}
+                  onClick={() => setLoginMethod("password")}
+                  className={`pb-2.5 px-3 text-[13.5px] font-semibold transition-all border-b-2 cursor-pointer ${
+                    loginMethod === "password"
+                      ? "border-brand text-brand"
+                      : "border-transparent text-ink-3 hover:text-ink"
+                  }`}
+                >
+                  Password
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={loginMethod === "otp"}
+                  onClick={() => setLoginMethod("otp")}
+                  className={`pb-2.5 px-3 text-[13.5px] font-semibold transition-all border-b-2 cursor-pointer ${
+                    loginMethod === "otp"
+                      ? "border-brand text-brand"
+                      : "border-transparent text-ink-3 hover:text-ink"
+                  }`}
+                >
+                  Mobile OTP
+                </button>
+              </div>
+
+              {loginMethod === "password" ? (
+                <form onSubmit={doLogin} noValidate>
+                  <Field label="Email or phone" htmlFor="identifier" required>
+                    <Input
+                      id="identifier"
+                      name="identifier"
+                      autoComplete="username"
+                      value={fields.identifier}
+                      onChange={(e) => set("identifier", e.target.value)}
+                      placeholder="you@example.com"
+                      required
+                    />
+                  </Field>
+                  <Field label="Password" htmlFor="password" required error={errors.password}>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="current-password"
+                      value={fields.password}
+                      onChange={(e) => set("password", e.target.value)}
+                      required
+                    />
+                  </Field>
+                  {formError && (
+                    <p role="alert" className="mb-4 rounded-[10px] bg-bad-soft border border-[#EFCFC9] px-4 py-3 text-[13.5px] text-bad font-medium">
+                      {formError}
+                    </p>
+                  )}
+                  <Button type="submit" size="lg" loading={busy} className="w-full">
+                    Sign in
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={doOtpLogin} noValidate>
+                  <Field label="Registered mobile phone" htmlFor="phone-otp" required hint="Include country code, e.g. +91XXXXXXXXXX">
+                    <div className="flex gap-2">
+                      <Input
+                        id="phone-otp"
+                        type="tel"
+                        value={fields.phone}
+                        onChange={(e) => set("phone", e.target.value)}
+                        placeholder="+919876543210"
+                        required
+                        disabled={busy || (otpSent && otpCountdown > 0)}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={doSendOtp}
+                        disabled={busy || (otpSent && otpCountdown > 0)}
+                        loading={busy && !otpSent}
+                        className="shrink-0 text-[13px]"
+                      >
+                        {otpSent ? (otpCountdown > 0 ? `Resend (${otpCountdown}s)` : "Resend") : "Send code"}
+                      </Button>
+                    </div>
+                  </Field>
+
+                  {otpSent && (
+                    <Field label="6-Digit verification code" htmlFor="otp-code" required hint="Enter the code sent to your phone.">
+                      <Input
+                        id="otp-code"
+                        type="text"
+                        maxLength={6}
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                        placeholder="123456"
+                        required
+                        autoFocus
+                      />
+                    </Field>
+                  )}
+
+                  {formError && (
+                    <p role="alert" className="mb-4 rounded-[10px] bg-bad-soft border border-[#EFCFC9] px-4 py-3 text-[13.5px] text-bad font-medium">
+                      {formError}
+                    </p>
+                  )}
+
+                  <Button type="submit" size="lg" loading={busy && otpSent} disabled={!otpSent} className="w-full">
+                    Verify & Sign in
+                  </Button>
+                </form>
               )}
-              <Button type="submit" size="lg" loading={busy} className="w-full">
-                Sign in
-              </Button>
-            </form>
+            </div>
           ) : (
             <form onSubmit={doRegister} className="mt-6" noValidate>
               <Field label="Full name" htmlFor="full_name" required error={errors.full_name}>

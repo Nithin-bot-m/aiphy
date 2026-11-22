@@ -31,8 +31,21 @@ API_PID=$!
 node server.js &
 NEXT_PID=$!
 
-trap 'kill "$API_PID" "$NEXT_PID" 2>/dev/null || true' INT TERM
+shutdown() {
+  echo "[start-all] Stopping child processes (api: $API_PID, next: $NEXT_PID)..."
+  kill -TERM "$API_PID" "$NEXT_PID" 2>/dev/null || true
+  wait "$API_PID" 2>/dev/null || true
+  wait "$NEXT_PID" 2>/dev/null || true
+  exit 0
+}
 
-# Stay in the foreground on the web process; if it exits the container
-# exits and the platform restarts it (API included).
-wait "$NEXT_PID"
+trap shutdown INT TERM
+
+# Dual-process supervisor: if EITHER process crashes, exit the container
+# with its exit code so the host platform auto-restarts immediately.
+wait -n "$API_PID" "$NEXT_PID" 2>/dev/null || wait "$API_PID" "$NEXT_PID"
+EXIT_CODE=$?
+echo "[start-all] Service exited with status $EXIT_CODE. Shutting down container..."
+kill -TERM "$API_PID" "$NEXT_PID" 2>/dev/null || true
+exit $EXIT_CODE
+

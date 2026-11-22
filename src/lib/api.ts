@@ -120,6 +120,10 @@ export const api = {
       request<LoginPayload>("auth/login", { method: "POST", body: { identifier, password }, public: true }),
     register: (body: Record<string, unknown>) =>
       request<LoginPayload>("auth/register", { method: "POST", body, public: true }),
+    sendOtp: (phone: string) =>
+      request<{ message: string; expires_in_minutes: number }>("auth/send-otp", { method: "POST", body: { phone }, public: true }),
+    verifyOtp: (phone: string, otp: string) =>
+      request<LoginPayload>("auth/verify-otp", { method: "POST", body: { phone, otp }, public: true }),
     me: () => request<{ user: { id: number; email: string | null; phone: string | null; role: string }; profile: Record<string, unknown> }>("auth/me"),
     logout: () => request<unknown>("auth/logout", { method: "POST" }),
   },

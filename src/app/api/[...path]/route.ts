@@ -55,6 +55,12 @@ async function forward(req: NextRequest, segments: string[]) {
     if (!HOP_BY_HOP.has(key.toLowerCase())) headers.set(key, value);
   });
 
+  // Ensure client IP is forwarded so backend rate-limiters don't collapse to 127.0.0.1
+  const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
+  if (clientIp) {
+    headers.set("x-forwarded-for", clientIp);
+  }
+
   let body: ArrayBuffer | undefined;
   if (req.method !== "GET" && req.method !== "HEAD") {
     body = await req.arrayBuffer();
@@ -97,6 +103,10 @@ async function forward(req: NextRequest, segments: string[]) {
 type Ctx = { params: Promise<{ path: string[] }> };
 
 export async function GET(req: NextRequest, ctx: Ctx) {
+  const { path } = await ctx.params;
+  return forward(req, path);
+}
+export async function HEAD(req: NextRequest, ctx: Ctx) {
   const { path } = await ctx.params;
   return forward(req, path);
 }

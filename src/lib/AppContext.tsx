@@ -41,6 +41,7 @@ interface AppState {
   pushToast: (message: string, tone?: Toast["tone"]) => void;
   dismissToast: (id: number) => void;
   signIn: (identifier: string, password: string) => Promise<SessionUser>;
+  signInWithOtp: (phone: string, otp: string) => Promise<SessionUser>;
   signUp: (body: Record<string, unknown>) => Promise<SessionUser>;
   signOut: () => void;
   refreshProfile: () => Promise<void>;
@@ -164,6 +165,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [adoptSession]
   );
 
+  const signInWithOtp = useCallback(
+    async (phone: string, otp: string) => {
+      const res = await api.auth.verifyOtp(phone, otp);
+      setToken(res.token);
+      const me = await api.auth.me();
+      adoptSession(me as Parameters<typeof adoptSession>[0]);
+      return { id: me.user.id, email: me.user.email, phone: me.user.phone, role: me.user.role } as SessionUser;
+    },
+    [adoptSession]
+  );
+
   const signUp = useCallback(
     async (body: Record<string, unknown>) => {
       const res = await api.auth.register(body);
@@ -193,12 +205,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       pushToast,
       dismissToast,
       signIn,
+      signInWithOtp,
       signUp,
       signOut,
       refreshProfile,
       clearSessionExpired: () => setSessionExpired(false),
     }),
-    [booted, user, profile, sessionExpired, toasts, pushToast, dismissToast, signIn, signUp, signOut, refreshProfile]
+    [booted, user, profile, sessionExpired, toasts, pushToast, dismissToast, signIn, signInWithOtp, signUp, signOut, refreshProfile]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
