@@ -248,17 +248,25 @@
 /* ---------- print (report reader) ------------------------- */
 
 @media print {
+  @page {
+    margin: 12mm 15mm;
+    size: A4 portrait;
+  }
   :root {
     --background: #ffffff;
+    --surface: #ffffff;
+    --text-primary: #111111;
   }
   body {
-    background: #ffffff;
-    font-size: 12.5px;
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-size: 12px;
+    line-height: 1.5;
   }
   .no-print {
     display: none !important;
   }
-  .print-block {
+  .print-block, article, section, .rounded-card {
     break-inside: avoid;
     page-break-inside: avoid;
   }

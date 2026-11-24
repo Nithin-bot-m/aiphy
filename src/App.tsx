@@ -12,6 +12,7 @@ import { AppShell, PublicHeader, PublicFooter } from "@/components/psych/nav";
 import { Button, EmptyState, LogoMark, ToastViewport, Wordmark } from "@/components/psych/ui";
 import Landing from "@/views/Landing";
 import { AuthScreen } from "@/views/Auth";
+import { LegalScreen } from "@/views/Legal";
 import Assessment from "@/views/Assessment";
 import Results from "@/views/Results";
 import Explore from "@/views/Explore";
@@ -105,7 +106,7 @@ function AppInner() {
   }
 
   /* ---------------- public ---------------- */
-  if (path === "/") {
+  if (path === "/" || path === "/how" || path === "/trust") {
     return (
       <>
         <Landing />
@@ -121,12 +122,55 @@ function AppInner() {
       </>
     );
   }
+  if (path === "/privacy") {
+    return (
+      <>
+        <LegalScreen type="privacy" />
+        <ToastViewport />
+      </>
+    );
+  }
+  if (path === "/terms") {
+    return (
+      <>
+        <LegalScreen type="terms" />
+        <ToastViewport />
+      </>
+    );
+  }
+  if (path === "/contact") {
+    return (
+      <>
+        <LegalScreen type="contact" />
+        <ToastViewport />
+      </>
+    );
+  }
 
   /* ---------------- requires auth ---------------- */
   if (!user) {
+    const knownAuthRoutes = [
+      "/home",
+      "/assessment",
+      "/results",
+      "/report",
+      "/explore",
+      "/profile",
+      "/parent",
+      "/admin",
+    ];
+    const isKnownAuth = knownAuthRoutes.some((r) => path === r || path.startsWith(r + "/"));
+    if (isKnownAuth) {
+      return (
+        <>
+          <AuthScreen mode="login" sessionExpired={sessionExpired} />
+          <ToastViewport />
+        </>
+      );
+    }
     return (
       <>
-        <AuthScreen mode="login" sessionExpired={sessionExpired} />
+        <NotFound navigate={navigate} />
         <ToastViewport />
       </>
     );

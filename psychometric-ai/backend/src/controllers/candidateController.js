@@ -17,7 +17,14 @@ async function requireStudent(req) {
 exports.getProfile = asyncHandler(async (req, res) => {
   const student = await requireStudent(req);
   const mappings = await userRepository.listMappingsForStudent(student.id);
-  res.json({ student, parent_links: mappings });
+  res.json({
+    student: {
+      ...student,
+      email: req.user.email || null,
+      phone: req.user.phone || null,
+    },
+    parent_links: mappings,
+  });
 });
 
 exports.updateProfile = asyncHandler(async (req, res) => {

@@ -71,6 +71,7 @@ export default function ReportReader({
   const [preferred, setPreferred] = useState<ReportType>(initialType ?? allowedTypes[0] ?? "candidate");
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenStep, setRegenStep] = useState<0 | 1 | 2>(0);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const res = useAsyncData(async () => {
     // Try the preferred type first; if it isn't generated yet, fall back to
@@ -117,18 +118,8 @@ export default function ReportReader({
     }
   };
 
-  const share = async () => {
-    const text = report ? `${report.title} — ${structured?.student?.first_name ?? "student"} (version ${structured?.assessment?.version_code ?? "?"})` : "Psychometric AI report";
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: report?.title ?? "Psychometric AI report", text });
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        pushToast("Report link copied.", "success");
-      }
-    } catch {
-      /* user cancelled sharing — nothing to do */
-    }
+  const share = () => {
+    setShareOpen(true);
   };
 
   const sections = useMemo(() => {
@@ -250,7 +241,7 @@ export default function ReportReader({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
               <path d="M7 8V3.5h10V8M7 17.5H5.2A1.7 1.7 0 0 1 3.5 15.8V10a1.5 1.5 0 0 1 1.5-1.5h14A1.5 1.5 0 0 1 20.5 10v5.8a1.7 1.7 0 0 1-1.7 1.7H17M7 14h10v6.5H7z" />
             </svg>
-            Download PDF
+            Print / Save PDF
           </Button>
           <Button size="sm" variant="secondary" onClick={share}>
             Share
@@ -440,6 +431,65 @@ export default function ReportReader({
           The stored scores stay exactly the same — this only rewrites the narrative explanation
           from the same result data. The input hash will confirm it.
         </p>
+      </Modal>
+
+      {/* ---------------- share modal ---------------- */}
+      <Modal open={shareOpen} onClose={() => setShareOpen(false)} title="Share this report">
+        <div className="space-y-4">
+          <p className="text-[13.5px] text-ink-2 leading-relaxed">
+            Psychometric AI reports are private to the student by default. You can share your results with your family or counselor in two secure ways:
+          </p>
+
+          <Card className="p-4.5 border-brand/30 bg-brand-mist/40 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11.5px] font-bold uppercase tracking-[0.12em] text-brand">
+                Option 1: Link with Parent (Live sync)
+              </span>
+              <Badge tone="ok">Recommended</Badge>
+            </div>
+            <p className="text-[13px] text-ink leading-relaxed">
+              Share your <strong>Student Code</strong> with your parent. When they enter it in their dashboard, you'll be prompted to approve their access.
+            </p>
+            {structured?.student?.student_code && (
+              <div className="flex items-center gap-2 pt-1">
+                <code className="tnum font-bold text-[15px] bg-surface px-3 py-1.5 rounded-[8px] border border-line">
+                  {structured.student.student_code}
+                </code>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(structured?.student?.student_code ?? "");
+                    pushToast("Student code copied to clipboard.", "success");
+                  }}
+                >
+                  Copy code
+                </Button>
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-4.5 space-y-2">
+            <span className="text-[11.5px] font-bold uppercase tracking-[0.12em] text-ink-3">
+              Option 2: Export or Print Document
+            </span>
+            <p className="text-[13px] text-ink-2 leading-relaxed">
+              Print a physical copy or save a clean, formatted PDF directly to your device to share via email or messaging.
+            </p>
+            <div className="pt-1">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setShareOpen(false);
+                  setTimeout(() => window.print(), 100);
+                }}
+              >
+                Print / Save PDF
+              </Button>
+            </div>
+          </Card>
+        </div>
       </Modal>
     </div>
   );

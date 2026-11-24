@@ -148,8 +148,15 @@ async function listChildrenForParent(parentId) {
   return await db.prepare(`
     SELECT s.id AS student_id, s.full_name, s.grade, s.school_name, s.board, s.student_code, s.is_demo,
            m.id AS mapping_id, m.status AS link_status, m.requested_by, m.linked_at,
-           (SELECT a.id FROM assessments a WHERE a.student_id = s.id ORDER BY a.id DESC LIMIT 1) AS latest_assessment_id,
-           (SELECT a.status FROM assessments a WHERE a.student_id = s.id ORDER BY a.id DESC LIMIT 1) AS assessment_status
+           COALESCE(
+             (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1),
+             (SELECT a.id FROM assessments a WHERE a.student_id = s.id ORDER BY a.id DESC LIMIT 1)
+           ) AS latest_assessment_id,
+           COALESCE(
+             (SELECT a.status FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1),
+             (SELECT a.status FROM assessments a WHERE a.student_id = s.id ORDER BY a.id DESC LIMIT 1)
+           ) AS assessment_status,
+           (SELECT a.completed_at FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1) AS completed_at
     FROM student_parent_mapping m
     JOIN students s ON m.student_id = s.id
     WHERE m.parent_id = ?

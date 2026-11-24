@@ -178,9 +178,13 @@ export function ParentHome() {
                           </Badge>
                         </div>
                         <p className="text-[13px] text-ink-2 mt-1.5">
-                          {c.grade != null ? `Grade ${c.grade} · ` : ""}
-                          {c.school_name ?? "—"}
-                          {c.board ? ` · ${c.board}` : ""}
+                          {[
+                            c.grade != null ? `Grade ${c.grade}` : null,
+                            c.school_name || null,
+                            c.board || null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "—"}
                         </p>
                         <p className="text-[13px] text-ink-2 mt-2.5">
                           {pending

@@ -5,9 +5,10 @@
  * The hero visual is an abstract "profile → dimensions → streams" panel
  * rendered with the design system (no robots, no AI magic effects).
  */
+import { useEffect } from "react";
 import { PublicHeader, PublicFooter } from "@/components/psych/nav";
 import { Button, Card, Eyebrow, SectionHeading } from "@/components/psych/ui";
-import { useApp, useRoute } from "@/lib/AppContext";
+import { useApp, useRoute, scrollToSection } from "@/lib/AppContext";
 
 /* ---------------- hero visual ---------------- */
 
@@ -152,6 +153,15 @@ export default function Landing() {
   const { user } = useApp();
   const [, navigate] = useRoute();
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash.replace(/^#\/?/, "");
+    if (hash === "how" || hash === "trust") {
+      const el = document.getElementById(hash);
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth" }), 60);
+    }
+  }, []);
+
   const startCta = () => navigate(user ? "/assessment" : "/register");
 
   return (
@@ -179,7 +189,11 @@ export default function Landing() {
                 </Button>
                 <a
                   href="#how"
-                  className="h-12 px-6 inline-flex items-center rounded-[12px] border border-line-2 bg-surface text-[15.5px] font-semibold text-ink hover:border-ink-3 active:scale-[0.98] transition-all"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollToSection("how");
+                  }}
+                  className="h-12 px-6 inline-flex items-center rounded-[12px] border border-line-2 bg-surface text-[15.5px] font-semibold text-ink hover:border-ink-3 active:scale-[0.98] transition-all cursor-pointer"
                 >
                   How it works
                 </a>
@@ -306,7 +320,11 @@ export default function Landing() {
               </Button>
               <a
                 href="#how"
-                className="h-12 px-6 inline-flex items-center rounded-[12px] border border-[#33474333] text-[15.5px] font-semibold text-[#F3F1EA] hover:bg-[#1E3B37] active:scale-[0.98] transition-all"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection("how");
+                }}
+                className="h-12 px-6 inline-flex items-center rounded-[12px] border border-[#33474333] text-[15.5px] font-semibold text-[#F3F1EA] hover:bg-[#1E3B37] active:scale-[0.98] transition-all cursor-pointer"
               >
                 See how it works
               </a>

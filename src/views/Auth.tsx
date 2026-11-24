@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import { useApp, useRoute } from "@/lib/AppContext";
-import { Button, Card, Field, Input, Select, Wordmark, Badge } from "@/components/psych/ui";
+import { Button, Card, Field, Input, Select, Wordmark, Badge, Modal } from "@/components/psych/ui";
 
 const DEMO_ACCOUNTS = [
   { role: "Student", id: "aarav@demo.psychometric-ai.local" },
@@ -56,9 +56,11 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [otpCountdown, setOtpCountdown] = useState(0);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [fields, setFields] = useState({
     identifier: "",
     password: "",
+    confirm_password: "",
     full_name: "",
     email: "",
     grade: "10",
@@ -90,6 +92,7 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
     if (role === "parent" && !fields.email.trim()) e.email = "Please enter an email address.";
     if (fields.email && !/^\S+@\S+\.\S+$/.test(fields.email)) e.email = "That email doesn't look right.";
     if (!fields.password || fields.password.length < 8) e.password = "Password needs at least 8 characters.";
+    if (fields.password !== fields.confirm_password) e.confirm_password = "Passwords do not match.";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -300,6 +303,15 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
                       required
                     />
                   </Field>
+                  <div className="flex justify-end -mt-2 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setForgotOpen(true)}
+                      className="text-[12.5px] font-medium text-brand hover:underline cursor-pointer"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                   {formError && (
                     <p role="alert" className="mb-4 rounded-[10px] bg-bad-soft border border-[#EFCFC9] px-4 py-3 text-[13.5px] text-bad font-medium">
                       {formError}
@@ -401,9 +413,10 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Grade" htmlFor="grade">
                     <Select id="grade" value={fields.grade} onChange={(e) => set("grade", e.target.value)}>
-                      <option value="9">9</option>
-                      <option value="10">10</option>
-                      <option value="11">11</option>
+                      <option value="9">Grade 9</option>
+                      <option value="10">Grade 10</option>
+                      <option value="11">Grade 11</option>
+                      <option value="12">Grade 12</option>
                     </Select>
                   </Field>
                   <Field label="Board" htmlFor="board">
@@ -435,9 +448,25 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
                   required
                 />
               </Field>
+              <Field label="Confirm password" htmlFor="reg-confirm" required error={errors.confirm_password}>
+                <Input
+                  id="reg-confirm"
+                  type="password"
+                  autoComplete="new-password"
+                  value={fields.confirm_password}
+                  onChange={(e) => set("confirm_password", e.target.value)}
+                  required
+                />
+              </Field>
               <p className="text-[12.5px] text-ink-3 leading-relaxed mb-4 -mt-1">
-                By creating an account you agree that results are for educational guidance and are
-                shared only with people the student approves.
+                By creating an account you agree to our{" "}
+                <button type="button" onClick={() => navigate("/terms")} className="text-brand underline cursor-pointer">
+                  Terms of Use
+                </button>{" "}
+                and{" "}
+                <button type="button" onClick={() => navigate("/privacy")} className="text-brand underline cursor-pointer">
+                  Privacy Policy
+                </button>. Results are for educational guidance and shared only with people you approve.
               </p>
               {formError && (
                 <p role="alert" className="mb-4 rounded-[10px] bg-bad-soft border border-[#EFCFC9] px-4 py-3 text-[13.5px] text-bad font-medium">
@@ -491,6 +520,38 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
               <p className="text-[11.5px] text-ink-3 mt-2.5">One click signs in with the demo password.</p>
             </Card>
           )}
+
+          <Modal open={forgotOpen} onClose={() => setForgotOpen(false)} title="Account Recovery">
+            <div className="space-y-4">
+              <p className="text-[13.5px] text-ink-2 leading-relaxed">
+                Forgot your password? You can recover access using either of these options:
+              </p>
+              <Card className="p-4 border-brand/30 bg-brand-mist/40 space-y-2">
+                <p className="font-semibold text-[14px] text-ink">Option 1: Mobile Phone OTP (Instant)</p>
+                <p className="text-[13px] text-ink-2 leading-relaxed">
+                  If your account has a registered phone number, you can log in immediately using a one-time SMS verification code without your password.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setForgotOpen(false);
+                    setLoginMethod("otp");
+                  }}
+                >
+                  Switch to Mobile OTP
+                </Button>
+              </Card>
+              <Card className="p-4 space-y-2">
+                <p className="font-semibold text-[14px] text-ink">Option 2: Institutional / Admin Reset</p>
+                <p className="text-[13px] text-ink-2 leading-relaxed">
+                  If your account was provisioned by your school or institution, contact your school counselor or administrator to reset your credentials.
+                </p>
+                <p className="text-[12.5px] text-ink-3">
+                  Email: support@psychometric-ai.local
+                </p>
+              </Card>
+            </div>
+          </Modal>
         </div>
       </div>
     </div>

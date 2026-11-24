@@ -58,10 +58,21 @@ export function useApp(): AppState {
 
 /* ---------------- hash router ---------------- */
 
+const IN_PAGE_ANCHORS = ["how", "trust", "principles", "features", "main"];
+
 export function currentPath(): string {
   if (typeof window === "undefined") return "/";
-  const h = window.location.hash.replace(/^#/, "");
-  return h === "" ? "/" : h;
+  const h = window.location.hash.replace(/^#\/?/, "");
+  if (!h || IN_PAGE_ANCHORS.includes(h.toLowerCase())) return "/";
+  return "/" + h.replace(/^\//, "");
+}
+
+export function scrollToSection(id: string) {
+  if (typeof document === "undefined") return;
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 export function useRoute(): [string, (to: string) => void] {
@@ -73,9 +84,21 @@ export function useRoute(): [string, (to: string) => void] {
     return () => window.removeEventListener("hashchange", sync);
   }, []);
   const navigate = useCallback((to: string) => {
-    if (currentPath() === to) return;
-    window.location.hash = to;
-    window.scrollTo({ top: 0 });
+    if (to === "/" || to === "") {
+      if (window.location.hash) {
+        window.history.pushState(null, "", window.location.pathname + window.location.search);
+      }
+      setPath("/");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const target = to.startsWith("/") ? to : "/" + to;
+    if (currentPath() === target) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    window.location.hash = target;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   return [path, navigate];
 }

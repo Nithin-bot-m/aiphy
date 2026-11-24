@@ -336,9 +336,10 @@ export function ProfileScreen() {
                 <div className="grid sm:grid-cols-3 gap-3">
                   <Field label="Grade" htmlFor="pf-grade">
                     <Select id="pf-grade" value={form.grade} onChange={(e) => setForm((f) => ({ ...f, grade: e.target.value }))}>
-                      <option value="9">9</option>
-                      <option value="10">10</option>
-                      <option value="11">11</option>
+                      <option value="9">Grade 9</option>
+                      <option value="10">Grade 10</option>
+                      <option value="11">Grade 11</option>
+                      <option value="12">Grade 12</option>
                     </Select>
                   </Field>
                   <Field label="Board" htmlFor="pf-board">
@@ -366,10 +367,11 @@ export function ProfileScreen() {
               <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-3.5 text-[14px]">
                 {[
                   ["Full name", p?.full_name],
-                  ["Grade", p?.grade != null ? String(p.grade) : null],
+                  ["Grade", p?.grade != null ? `Grade ${p.grade}` : null],
                   ["Board", p?.board],
                   ["School", p?.school_name],
                   ["Email", p?.email ?? undefined],
+                  ["Phone", p?.phone ?? undefined],
                 ].map(([k, v]) => (
                   <div key={k as string}>
                     <dt className="text-[12px] font-semibold uppercase tracking-[0.08em] text-ink-3">{k}</dt>
@@ -384,10 +386,23 @@ export function ProfileScreen() {
           {p?.student_code && (
             <Card className="p-6">
               <p className="font-semibold text-[15px]">Student code</p>
+              <p className="text-[12.5px] text-ink-2 mt-1">
+                Share this code with your parent to link their account to your profile.
+              </p>
               <div className="mt-3 flex items-center gap-3 flex-wrap">
                 <code className="tnum text-[15px] font-bold tracking-[0.08em] bg-surface-2 border border-line rounded-[10px] px-4 py-2">
                   {p.student_code}
                 </code>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(p.student_code ?? "");
+                    pushToast("Student code copied.", "success");
+                  }}
+                >
+                  Copy code
+                </Button>
               </div>
             </Card>
           )}
@@ -416,6 +431,30 @@ export function ProfileScreen() {
                 ))}
               </ul>
             )}
+          </Card>
+
+          {/* -------- DPDP §11/§12 self-service -------- */}
+          <Card className="p-6">
+            <p className="font-semibold text-[15px] mb-1">Account & Data Management</p>
+            <p className="text-[13px] text-ink-2 mb-4 leading-relaxed">
+              In accordance with the Digital Personal Data Protection (DPDP) Act 2023, you can export your data or request account removal at any time.
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(p, null, 2));
+                  const dlAnchor = document.createElement("a");
+                  dlAnchor.setAttribute("href", dataStr);
+                  dlAnchor.setAttribute("download", `psychometric_profile_${p?.student_code || "export"}.json`);
+                  dlAnchor.click();
+                  pushToast("Profile data exported successfully.", "success");
+                }}
+              >
+                Export My Data (JSON)
+              </Button>
+            </div>
           </Card>
 
           {/* -------- privacy note -------- */}

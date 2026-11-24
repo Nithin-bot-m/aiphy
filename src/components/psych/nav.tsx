@@ -6,7 +6,7 @@
  * Admin uses its own distinct console layout (see Admin view).
  */
 import { useState } from "react";
-import { useApp, useRoute } from "@/lib/AppContext";
+import { useApp, useRoute, scrollToSection } from "@/lib/AppContext";
 import { Wordmark, Badge } from "./ui";
 import { initials } from "@/lib/format";
 
@@ -210,8 +210,26 @@ export function PublicHeader() {
           <Wordmark />
         </button>
         <nav aria-label="Public" className="flex items-center gap-2 sm:gap-5">
-          <a href="#how" className="hidden sm:inline text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors">How it works</a>
-          <a href="#trust" className="hidden sm:inline text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors">Principles</a>
+          <a
+            href="#how"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection("how");
+            }}
+            className="hidden sm:inline text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer"
+          >
+            How it works
+          </a>
+          <a
+            href="#trust"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection("trust");
+            }}
+            className="hidden sm:inline text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer"
+          >
+            Principles
+          </a>
           {user ? (
             <button
               onClick={() => navigate(user.role === "admin" ? "/admin" : user.role === "parent" ? "/parent" : "/home")}
@@ -242,10 +260,28 @@ export function PublicHeader() {
 }
 
 export function PublicFooter() {
+  const [, navigate] = useRoute();
   return (
     <footer className="mt-auto border-t border-line bg-surface no-print">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <Wordmark />
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-5">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+          <button onClick={() => navigate("/")} className="cursor-pointer" aria-label="Home">
+            <Wordmark />
+          </button>
+          <div className="flex items-center gap-4 text-[12.5px] font-medium text-ink-3">
+            <button onClick={() => navigate("/privacy")} className="hover:text-ink transition-colors cursor-pointer">
+              Privacy Policy
+            </button>
+            <span>·</span>
+            <button onClick={() => navigate("/terms")} className="hover:text-ink transition-colors cursor-pointer">
+              Terms of Use
+            </button>
+            <span>·</span>
+            <button onClick={() => navigate("/contact")} className="hover:text-ink transition-colors cursor-pointer">
+              Support
+            </button>
+          </div>
+        </div>
         <p className="text-[12.5px] text-ink-3 text-center sm:text-right max-w-md leading-relaxed">
           Educational guidance for Grade 10 students. Results are fit indices to support
           conversations — they do not predict outcomes or define anyone.

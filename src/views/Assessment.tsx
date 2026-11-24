@@ -459,8 +459,10 @@ function Runner({
                 >
                   Review
                 </button>
-                <Button onClick={goNext} aria-label="Save and continue">
-                  {idx === questions.length - 1 ? "Review & finish" : "Save & Continue"}
+                <Button onClick={goNext} aria-label={responses[q.id] == null ? "Skip question" : "Save and continue"}>
+                  {idx === questions.length - 1
+                    ? (responses[q.id] == null ? "Skip to review" : "Review & finish")
+                    : (responses[q.id] == null ? "Skip for now" : "Save & Continue")}
                   <svg width="13" height="13" viewBox="0 0 12 12" aria-hidden="true">
                     <path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" strokeWidth="1.7" fill="none" strokeLinecap="round" />
                   </svg>
