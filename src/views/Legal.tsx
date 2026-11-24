@@ -160,3 +160,4 @@ export function LegalScreen({ type }: { type: "privacy" | "terms" | "contact" })
     </div>
   );
 }
+
