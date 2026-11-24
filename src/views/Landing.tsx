@@ -137,7 +137,7 @@ const PRINCIPLES = [
   },
   {
     title: "Structured assessment",
-    body: "Aptitude, interests and work style are measured with defined dimensions and documented weights, not open-ended AI guesses.",
+    body: "Aptitude, interests and work style are measured with defined dimensions and documented standard weights, not subjective impressions.",
   },
   {
     title: "Explainable results",
@@ -145,7 +145,7 @@ const PRINCIPLES = [
   },
   {
     title: "Privacy-conscious design",
-    body: "Results are shared only with people you approve. Errors never expose internals, and AI never receives your credentials.",
+    body: "Results are shared only with people you approve. Errors never expose internals, and your personal credentials remain strictly encrypted.",
   },
 ];
 
@@ -214,8 +214,8 @@ export default function Landing() {
             <div className="max-w-3xl mx-auto text-center">
               <Eyebrow className="justify-center">Our product principle</Eyebrow>
               <blockquote className="font-display text-[22px] sm:text-[28px] font-bold leading-snug tracking-[-0.015em] mt-4 text-ink">
-                &ldquo;Your results are calculated from your assessment responses. AI helps explain
-                your results — <span className="text-brand">it does not decide your scores.</span>&rdquo;
+                &ldquo;Your results are calculated directly from your assessment responses. Reports help explain
+                your profile — <span className="text-brand">they do not define your potential.</span>&rdquo;
               </blockquote>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12">

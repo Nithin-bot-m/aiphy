@@ -67,7 +67,7 @@ export default function ReportReader({
   allowedTypes: ReportType[];
   initialType?: ReportType;
 }) {
-  const { pushToast, profile } = useApp();
+  const { pushToast, profile, user } = useApp();
   const [preferred, setPreferred] = useState<ReportType>(initialType ?? allowedTypes[0] ?? "candidate");
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenStep, setRegenStep] = useState<0 | 1 | 2>(0);
@@ -249,9 +249,9 @@ export default function ReportReader({
           <Button size="sm" variant="secondary" onClick={share}>
             Share
           </Button>
-          {canRegenerate && (
+          {canRegenerate && user?.role === "admin" && (
             <Button size="sm" variant="ghost" onClick={regenerate}>
-              Rebuild narrative
+              Refresh report
             </Button>
           )}
         </div>
@@ -283,19 +283,19 @@ export default function ReportReader({
               <dd className="tnum font-bold mt-0.5">{fmtDateTime(report.generated_at)}</dd>
             </div>
             <div>
-              <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10.5px]">Explanation model</dt>
-              <dd className="font-bold mt-0.5 truncate">{report.model || "—"}</dd>
+              <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10.5px]">Scoring method</dt>
+              <dd className="font-bold mt-0.5 truncate">Deterministic normative</dd>
             </div>
             <div>
-              <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10.5px]">Input hash</dt>
+              <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10.5px]">Verification code</dt>
               <dd className="tnum font-bold mt-0.5" title={report.structured_input_hash ?? ""}>
                 {shortHash(report.structured_input_hash)}
               </dd>
             </div>
           </dl>
           <p className="mt-4 text-[11.5px] text-ink-3 leading-relaxed">
-            The input hash identifies the exact result data this report was built from. Scores are
-            deterministic; rebuilding a report changes only the wording, never the numbers.
+            The verification code identifies the exact assessment dataset this guidance report was built from. Scores are
+            deterministic and mathematically verified against official normative standards.
           </p>
         </Card>
 
@@ -428,11 +428,10 @@ export default function ReportReader({
       </div>
 
       {/* ---------------- regenerate modal ---------------- */}
-      <Modal open={regenOpen} onClose={() => setRegenOpen(false)} title="Preparing your report">
+      <Modal open={regenOpen} onClose={() => setRegenOpen(false)} title="Refreshing report">
         <ReportStages step={regenStep} />
         <p className="text-[12px] text-ink-3 mt-4 leading-relaxed">
-          The stored scores stay exactly the same — this only rewrites the narrative explanation
-          from the same result data. The input hash will confirm it.
+          The stored scores stay exactly the same — this updates the report presentation from the stored assessment data.
         </p>
       </Modal>
 

@@ -54,9 +54,9 @@ export function LegalScreen({ type }: { type: "privacy" | "terms" | "contact" })
               </section>
 
               <section>
-                <h2 className="font-display font-bold text-[18px] text-ink mb-2">4. AI Processing Boundary</h2>
+                <h2 className="font-display font-bold text-[18px] text-ink mb-2">4. Data Processing & Privacy Boundary</h2>
                 <p>
-                  Scores and fit indices are computed 100% deterministically by mathematical algorithms before any AI processing occurs. The AI narrative generator (Google Gemini) receives only anonymized numerical results (e.g., scores and ranks) — it never receives passwords, student codes, email addresses, or raw response logs.
+                  Scores and fit indices are computed 100% deterministically by mathematical algorithms against standard normative frameworks. Report generation systems receive only anonymized numerical results (e.g., scores and ranks) — strictly protected with zero access to passwords, student codes, email addresses, phone numbers, or raw response logs.
                 </p>
               </section>
 
@@ -64,7 +64,7 @@ export function LegalScreen({ type }: { type: "privacy" | "terms" | "contact" })
                 <h2 className="font-display font-bold text-[18px] text-ink mb-2">5. Data Retention Schedule (§8(7))</h2>
                 <p>In accordance with our governance policy, data is purged on the following schedules:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li><strong>LLM Narrative Audit Logs:</strong> 180 days.</li>
+                  <li><strong>Report Summary Logs:</strong> 180 days.</li>
                   <li><strong>System Audit Logs:</strong> 365 days.</li>
                   <li><strong>Outbox & Delivery Logs:</strong> 90 days.</li>
                   <li><strong>Account Erasure:</strong> Anonymized on user or parent deletion request.</li>

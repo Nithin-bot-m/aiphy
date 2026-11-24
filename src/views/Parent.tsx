@@ -646,7 +646,7 @@ export function ParentReports() {
     <div className="max-w-5xl mx-auto px-5 py-8 sm:py-10">
       <ParentHeader
         title="Reports"
-        sub="The same explainable report your child sees — including a version written for parents."
+        sub="The same comprehensive guidance report your child sees — including a version tailored for parents."
       />
       <div className="mt-6">
         <ChildPicker children_={children_ ?? []} activeId={activeAssessment} onSelect={(_sid, aid) => setSelected(aid)} />

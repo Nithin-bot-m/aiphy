@@ -463,8 +463,8 @@ export function ProfileScreen() {
             <p className="font-semibold text-[14px]">How your data is handled</p>
             <p className="text-[13px] text-ink-2 mt-2 leading-relaxed">
               Your responses and results stay private. Parents only see your profile after you approve
-              their request, and you can revoke access any time. The explanation AI receives only your
-              final scores — never your credentials — and never changes them.
+              their request, and you can revoke access any time. All assessment reports reflect your
+              exact calculated scores — credentials remain strictly encrypted and scores are never altered.
             </p>
           </Card>
         </div>
