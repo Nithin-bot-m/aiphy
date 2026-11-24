@@ -16,10 +16,17 @@ const DEMO_ACCOUNTS = [
   { role: "Admin", id: "admin@demo.psychometric-ai.local" },
 ];
 
-function AuthAside() {
+function AuthAside({ onHome }: { onHome: () => void }) {
   return (
     <aside className="hidden lg:flex flex-col justify-between bg-inverse p-10 xl:p-14">
-      <Wordmark inverse />
+      <button
+        type="button"
+        onClick={onHome}
+        className="self-start cursor-pointer hover:opacity-85 transition-opacity"
+        aria-label="Psychometric AI home"
+      >
+        <Wordmark inverse />
+      </button>
       <div>
         <h2 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-[#F3F1EA]">
           Understand your strengths.
@@ -199,11 +206,41 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
 
   return (
     <div className="min-h-screen grid lg:grid-cols-[1fr_460px] xl:grid-cols-[1fr_520px] bg-paper">
-      <AuthAside />
+      <AuthAside onHome={() => navigate("/")} />
       <div className="flex flex-col justify-center px-5 sm:px-10 py-10 lg:py-14 bg-surface lg:border-l border-line">
         <div className="w-full max-w-md mx-auto rise">
-          <div className="lg:hidden mb-8">
-            <Wordmark />
+          <div className="flex items-center justify-between gap-4 mb-6 sm:mb-7">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="lg:hidden cursor-pointer hover:opacity-85 transition-opacity"
+              aria-label="Psychometric AI home"
+            >
+              <Wordmark />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-3 hover:text-brand transition-colors cursor-pointer group"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 16 16"
+                fill="none"
+                aria-hidden="true"
+                className="transition-transform group-hover:-translate-x-0.5"
+              >
+                <path
+                  d="M10 12.5 5.5 8 10 3.5"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Back to home
+            </button>
           </div>
 
           {sessionExpired && (

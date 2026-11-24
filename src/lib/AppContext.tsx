@@ -75,19 +75,28 @@ export function scrollToSection(id: string) {
   }
 }
 
+const ROUTE_CHANGE_EVENT = "app:routechange";
+
 export function useRoute(): [string, (to: string) => void] {
   const [path, setPath] = useState("/");
   useEffect(() => {
     const sync = () => setPath(currentPath());
     sync();
     window.addEventListener("hashchange", sync);
-    return () => window.removeEventListener("hashchange", sync);
+    window.addEventListener("popstate", sync);
+    window.addEventListener(ROUTE_CHANGE_EVENT, sync);
+    return () => {
+      window.removeEventListener("hashchange", sync);
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener(ROUTE_CHANGE_EVENT, sync);
+    };
   }, []);
   const navigate = useCallback((to: string) => {
     if (to === "/" || to === "") {
-      if (window.location.hash) {
+      if (window.location.hash || window.location.href.endsWith("#")) {
         window.history.pushState(null, "", window.location.pathname + window.location.search);
       }
+      window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT));
       setPath("/");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -98,6 +107,7 @@ export function useRoute(): [string, (to: string) => void] {
       return;
     }
     window.location.hash = target;
+    window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   return [path, navigate];

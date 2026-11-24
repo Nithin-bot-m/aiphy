@@ -202,7 +202,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 export function PublicHeader() {
   const { user } = useApp();
-  const [, navigate] = useRoute();
+  const [path, navigate] = useRoute();
+  const scrollLanding = (id: string) => {
+    if (path !== "/" && path !== "/how" && path !== "/trust") {
+      navigate("/");
+      window.setTimeout(() => scrollToSection(id), 90);
+    } else {
+      scrollToSection(id);
+    }
+  };
   return (
     <header className="sticky top-0 z-40 bg-paper/90 backdrop-blur border-b border-line/70 no-print">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 h-[68px] flex items-center justify-between">
@@ -214,7 +222,7 @@ export function PublicHeader() {
             href="#how"
             onClick={(e) => {
               e.preventDefault();
-              scrollToSection("how");
+              scrollLanding("how");
             }}
             className="hidden sm:inline text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer"
           >
@@ -224,7 +232,7 @@ export function PublicHeader() {
             href="#trust"
             onClick={(e) => {
               e.preventDefault();
-              scrollToSection("trust");
+              scrollLanding("trust");
             }}
             className="hidden sm:inline text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer"
           >
