@@ -67,7 +67,7 @@ export default function ReportReader({
   allowedTypes: ReportType[];
   initialType?: ReportType;
 }) {
-  const { pushToast } = useApp();
+  const { pushToast, profile } = useApp();
   const [preferred, setPreferred] = useState<ReportType>(initialType ?? allowedTypes[0] ?? "candidate");
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenStep, setRegenStep] = useState<0 | 1 | 2>(0);
@@ -94,6 +94,9 @@ export default function ReportReader({
   const report = res.data?.report;
   const structured = report?.structured_data as CanonicalResult | null | undefined;
   const type: ReportType = res.data?.effectiveType ?? preferred;
+  const studentCode =
+    structured?.student?.student_code ??
+    ((profile as Record<string, unknown> | null)?.student_code as string | undefined);
 
   // candidate → candidate report only; parent → parent+candidate (server enforces)
   const canRegenerate = allowedTypes.length > 0;
@@ -450,16 +453,16 @@ export default function ReportReader({
             <p className="text-[13px] text-ink leading-relaxed">
               Share your <strong>Student Code</strong> with your parent. When they enter it in their dashboard, you'll be prompted to approve their access.
             </p>
-            {structured?.student?.student_code && (
+            {studentCode && (
               <div className="flex items-center gap-2 pt-1">
                 <code className="tnum font-bold text-[15px] bg-surface px-3 py-1.5 rounded-[8px] border border-line">
-                  {structured.student.student_code}
+                  {studentCode}
                 </code>
                 <Button
                   size="sm"
                   variant="secondary"
                   onClick={async () => {
-                    await navigator.clipboard.writeText(structured?.student?.student_code ?? "");
+                    await navigator.clipboard.writeText(studentCode);
                     pushToast("Student code copied to clipboard.", "success");
                   }}
                 >

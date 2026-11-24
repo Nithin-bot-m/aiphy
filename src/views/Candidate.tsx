@@ -35,6 +35,7 @@ interface AssessmentsList {
 interface ProfileView {
   full_name?: string;
   email?: string;
+  phone?: string;
   grade?: number | null;
   school_name?: string | null;
   board?: string | null;

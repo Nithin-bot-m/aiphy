@@ -33,6 +33,8 @@ export interface CandidateProfile {
   student_code: string;
   profile_completed: number | boolean;
   dob?: string | null;
+  email?: string | null;
+  phone?: string | null;
   pending_parent_requests?: ParentRequestRow[];
   parent_links?: ParentLinkRow[];
 }
@@ -234,7 +236,13 @@ export interface CanonicalResult {
     completed_at?: string | null;
     scoring_config?: string;
   };
-  student: { id: number; first_name: string; grade: number | null; board: string | null };
+  student: {
+    id: number;
+    first_name: string;
+    grade: number | null;
+    board: string | null;
+    student_code?: string | null;
+  };
   completeness: Record<string, CompletenessItem>;
   aptitude: AptitudeScores;
   riasec: RiasecScores;
