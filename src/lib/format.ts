@@ -32,8 +32,9 @@ export function shortHash(hash?: string | null, size = 10): string {
 
 export function initials(name?: string | null): string {
   if (!name) return "•";
-  return name
-    .trim()
+  const cleaned = name.replace(/[^\w\s]/g, "").trim();
+  if (!cleaned) return name.slice(0, 1).toUpperCase();
+  return cleaned
     .split(/\s+/)
     .slice(0, 2)
     .map((p) => p[0]?.toUpperCase() ?? "")

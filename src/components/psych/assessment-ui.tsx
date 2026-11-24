@@ -80,17 +80,19 @@ export function QuestionNavigator({
   onJump: (index: number) => void;
 }) {
   return (
-    <div role="navigation" aria-label="Question navigation" className="space-y-3">
+    <div role="navigation" aria-label="Question navigation" className="space-y-3.5">
       {(["aptitude", "riasec", "grit"] as const).map((mod) => {
         const idxs = questions.map((q, i) => ({ q, i })).filter(({ q }) => q.module === mod);
         if (idxs.length === 0) return null;
         const title = mod === "aptitude" ? "Aptitude" : mod === "riasec" ? "Interests" : "Work style";
+        const answeredInMod = idxs.filter(({ q }) => responses[q.id]?.selected_option_id != null).length;
         return (
-          <div key={mod}>
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3 mb-1.5">
-              {title} · {idxs.filter(({ q }) => responses[q.id]?.selected_option_id != null).length}/{idxs.length}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
+          <div key={mod} className="space-y-1.5">
+            <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3">
+              <span>{title}</span>
+              <span className="tnum font-semibold">{answeredInMod}/{idxs.length}</span>
+            </div>
+            <div className="grid grid-cols-5 gap-1.5">
               {idxs.map(({ i }) => {
                 const q = questions[i];
                 const answered = responses[q.id]?.selected_option_id != null;
@@ -102,12 +104,12 @@ export function QuestionNavigator({
                     onClick={() => onJump(i)}
                     aria-label={`Go to question ${i + 1}${answered ? " (answered)" : ""}`}
                     aria-current={isCurrent ? "true" : undefined}
-                    className={`tnum w-8.5 h-8.5 min-w-[34px] min-h-[34px] sm:min-w-[32px] sm:min-h-[32px] rounded-[8px] text-[12px] font-bold flex items-center justify-center transition-all cursor-pointer ${
+                    className={`tnum h-8 rounded-[7px] text-[12px] font-bold flex items-center justify-center transition-all cursor-pointer ${
                       isCurrent
-                        ? "bg-ink text-[#F3F1EA] ring-2 ring-ink-3/30"
+                        ? "bg-ink text-[#F3F1EA] ring-2 ring-ink/30 shadow-sm"
                         : answered
-                          ? "bg-brand-soft text-brand-strong hover:bg-brand hover:text-on-brand"
-                          : "bg-surface-2 text-ink-3 hover:text-ink hover:bg-border"
+                          ? "bg-brand-soft text-brand-strong hover:bg-brand hover:text-on-brand font-semibold"
+                          : "bg-surface-2 text-ink-3 hover:text-ink hover:bg-border font-medium"
                     }`}
                   >
                     {i + 1}

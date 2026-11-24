@@ -111,7 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="px-4 py-4 border-t border-line">
           <div className="flex items-center gap-3 px-1.5">
-            <span className="w-9 h-9 rounded-full bg-brand-soft text-brand-strong font-display font-bold text-[13px] flex items-center justify-center" aria-hidden="true">
+            <span className="w-9 h-9 rounded-full bg-brand-soft text-brand-strong font-display font-bold text-[13px] flex items-center justify-center shrink-0" aria-hidden="true">
               {initials(name)}
             </span>
             <div className="min-w-0 flex-1">

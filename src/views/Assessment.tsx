@@ -330,14 +330,12 @@ function Runner({
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-28 lg:pb-10">
       {/* ---------- runner header ---------- */}
-      <div className="sticky top-[14px] lg:top-4 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-4 pb-3 bg-paper/92 backdrop-blur rounded-b-[14px]">
-        <div className="flex items-center justify-between gap-4 mb-2.5">
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-3.5 pb-3 bg-paper/95 backdrop-blur border-b border-line/60">
+        <div className="flex items-center justify-between gap-4 mb-2">
           <div className="flex items-center gap-3 min-w-0">
             <span className="lg:hidden"><Wordmark /></span>
-            <span className="sm:hidden font-display font-bold text-[14px]">Your Profile</span>
-            <span className="hidden lg:block h-4 w-px bg-line-2" aria-hidden="true" />
             <p className="hidden lg:block text-[13px] font-semibold text-ink-2 truncate">
-              Discover Your Profile
+              Psychometric Assessment · Discover Your Profile
             </p>
           </div>
           <div className="flex items-center gap-3.5 shrink-0">
@@ -425,39 +423,21 @@ function Runner({
               ))}
             </div>
 
-            {completeError && (
-              <p role="alert" className="mt-5 rounded-[10px] bg-warn-soft border border-[#EBDDBB] px-4 py-3 text-[13.5px] text-warn font-medium">
-                {completeError}
-              </p>
-            )}
-          </div>
-
-          {/* desktop rail */}
-          <aside className="hidden lg:block" aria-label="Progress detail">
-            <Card className="p-4 sticky top-32">
-              <QuestionNavigator questions={questions} responses={Object.fromEntries(Object.entries(responses).map(([k, v]) => [k, { selected_option_id: v }]))} current={idx} onJump={jumpTo} />
-            </Card>
-          </aside>
-        </div>
-      ) : null}
-
-      {/* ---------- bottom action bar ---------- */}
-      {phase === "question" && q && (
-        <div className="fixed lg:sticky bottom-0 left-0 right-0 lg:bottom-4 z-30">
-          <div className="lg:max-w-5xl lg:mx-auto lg:px-6">
-            <div className="bg-surface/95 backdrop-blur border-t lg:border border-line lg:rounded-card lg:shadow-pop px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+            {/* Desktop action controls directly under options */}
+            <div className="hidden lg:flex items-center justify-between gap-3 mt-8 pt-5 border-t border-line">
               <Button variant="secondary" onClick={goPrev} disabled={idx === 0}>
                 <svg width="13" height="13" viewBox="0 0 12 12" aria-hidden="true">
                   <path d="M7.5 2.5 4 6l3.5 3.5" stroke="currentColor" strokeWidth="1.7" fill="none" strokeLinecap="round" />
                 </svg>
                 Previous
               </Button>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={() => setReviewOpen(true)}
-                  className="hidden sm:inline text-[13px] font-semibold text-ink-2 hover:text-ink cursor-pointer px-2"
+                  className="text-[13px] font-semibold text-ink-2 hover:text-ink cursor-pointer px-3 py-2 rounded-[8px] hover:bg-surface-2 transition-colors"
                 >
-                  Review
+                  Review ({answeredCount}/{questions.length})
                 </button>
                 <Button onClick={goNext} aria-label={responses[q.id] == null ? "Skip question" : "Save and continue"}>
                   {idx === questions.length - 1
@@ -469,20 +449,49 @@ function Runner({
                 </Button>
               </div>
             </div>
+
+            {completeError && (
+              <p role="alert" className="mt-5 rounded-[10px] bg-warn-soft border border-[#EBDDBB] px-4 py-3 text-[13.5px] text-warn font-medium">
+                {completeError}
+              </p>
+            )}
           </div>
+
+          {/* desktop rail */}
+          <aside className="hidden lg:block" aria-label="Progress detail">
+            <Card className="p-4 sticky top-20 max-h-[calc(100vh-6.5rem)] overflow-y-auto">
+              <QuestionNavigator questions={questions} responses={Object.fromEntries(Object.entries(responses).map(([k, v]) => [k, { selected_option_id: v }]))} current={idx} onJump={jumpTo} />
+            </Card>
+          </aside>
+        </div>
+      ) : null}
+
+      {/* ---------- mobile fixed bottom bar ---------- */}
+      {phase === "question" && q && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-surface/95 backdrop-blur border-t border-line px-4 py-3 flex items-center justify-between gap-3 shadow-pop">
+          <Button variant="secondary" size="sm" onClick={goPrev} disabled={idx === 0}>
+            <svg width="13" height="13" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M7.5 2.5 4 6l3.5 3.5" stroke="currentColor" strokeWidth="1.7" fill="none" strokeLinecap="round" />
+            </svg>
+            Previous
+          </Button>
+          <button
+            type="button"
+            onClick={() => setReviewOpen(true)}
+            className="text-[13px] font-semibold text-ink-2 hover:text-ink cursor-pointer px-2"
+          >
+            Review ({answeredCount}/{questions.length})
+          </button>
+          <Button size="sm" onClick={goNext} aria-label={responses[q.id] == null ? "Skip question" : "Save and continue"}>
+            {idx === questions.length - 1
+              ? (responses[q.id] == null ? "Skip to review" : "Review & finish")
+              : (responses[q.id] == null ? "Skip for now" : "Save & Continue")}
+            <svg width="13" height="13" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M4.5 2.5 8 6l-3.5 3.5" stroke="currentColor" strokeWidth="1.7" fill="none" strokeLinecap="round" />
+            </svg>
+          </Button>
         </div>
       )}
-
-      {/* mobile navigator drawer trigger */}
-      <button
-        onClick={() => setReviewOpen(true)}
-        className="lg:hidden fixed bottom-20 right-4 z-30 w-12 h-12 rounded-full bg-ink text-[#F3F1EA] shadow-pop flex items-center justify-center cursor-pointer"
-        aria-label="Review progress and finish"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-          <path d="M4 20V10M10 20V4M16 20v-8M21 20H3" />
-        </svg>
-      </button>
 
       {/* ---------- review / finish modal ---------- */}
       <Modal
