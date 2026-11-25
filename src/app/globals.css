@@ -210,19 +210,24 @@
 
 .narrative {
   color: var(--text-primary);
-  font-size: 15.5px;
-  line-height: 1.75;
+  font-size: 15px;
+  line-height: 1.72;
 }
 .narrative h2,
 .narrative h3 {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
-  margin: 1.4em 0 0.5em;
+  margin: 1.35em 0 0.45em;
+  padding-top: 1.1em;
+  border-top: 1px solid var(--border);
   letter-spacing: -0.01em;
+  color: var(--text-primary);
 }
 .narrative h2:first-child,
 .narrative h3:first-child {
   margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 .narrative p {
   margin: 0.7em 0;

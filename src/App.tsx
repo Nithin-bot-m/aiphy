@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { AppProvider, useApp, useRoute } from "@/lib/AppContext";
 import { AppShell, PublicHeader, PublicFooter } from "@/components/psych/nav";
-import { Button, EmptyState, LogoMark, ToastViewport, Wordmark } from "@/components/psych/ui";
+import { Button, EmptyState, LogoMark, Skeleton, SkeletonCard, ToastViewport, Wordmark } from "@/components/psych/ui";
 import Landing from "@/views/Landing";
 import { AuthScreen } from "@/views/Auth";
 import { LegalScreen } from "@/views/Legal";
@@ -46,8 +46,17 @@ function NotFound({ navigate }: { navigate: (to: string) => void }) {
 }
 
 function CandidateReport({ navigate }: { navigate: (to: string) => void }) {
-  const res = useMyAssessmentId();
-  if (res == null) {
+  const { id, loading } = useMyAssessmentId();
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-9 space-y-5">
+        <Skeleton className="h-9 w-48" />
+        <SkeletonCard lines={4} />
+        <SkeletonCard lines={5} />
+      </div>
+    );
+  }
+  if (id == null) {
     return (
       <div className="max-w-2xl mx-auto px-5 py-16">
         <EmptyState
@@ -58,28 +67,37 @@ function CandidateReport({ navigate }: { navigate: (to: string) => void }) {
       </div>
     );
   }
-  return <ReportReader assessmentId={res} allowedTypes={["candidate"]} initialType="candidate" />;
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-9 print:p-0 print:max-w-none">
+      <ReportReader
+        assessmentId={id}
+        allowedTypes={["candidate"]}
+        initialType="candidate"
+        onBack={() => navigate("/results")}
+      />
+    </div>
+  );
 }
 
 /** Reads the latest assessment id from /candidate/results (null if none). */
-function useMyAssessmentId(): number | null {
-  const [id, setId] = useState<number | null | "loading">("loading");
+function useMyAssessmentId(): { id: number | null; loading: boolean } {
+  const [state, setState] = useState<{ id: number | null; loading: boolean }>({ id: null, loading: true });
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const { api } = await import("@/lib/api");
         const data = (await api.candidate.results()) as { assessment_id?: number } | null;
-        if (!cancelled) setId(data?.assessment_id ?? null);
+        if (!cancelled) setState({ id: data?.assessment_id ?? null, loading: false });
       } catch {
-        if (!cancelled) setId(null);
+        if (!cancelled) setState({ id: null, loading: false });
       }
     })();
     return () => {
       cancelled = true;
     };
   }, []);
-  return id === "loading" ? null : id;
+  return state;
 }
 
 function AppInner() {

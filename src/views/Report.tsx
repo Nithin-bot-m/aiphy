@@ -6,7 +6,7 @@
  * the backend's sanitized narrative. The report content is the backend's
  * word-for-word data; this view adds layout, not opinions.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useApp, useAsyncData } from "@/lib/AppContext";
 import {
@@ -14,12 +14,21 @@ import {
   Button,
   Card,
   ErrorState,
+  Eyebrow,
   Modal,
   Progress,
   Skeleton,
 } from "@/components/psych/ui";
 import { AlignmentCard, AptitudePanel, RiasecChart, WorkStylePanel } from "@/components/psych/dataviz";
-import { fmtDateTime, shortHash, bandTone } from "@/lib/format";
+import {
+  RIASEC_DIMENSIONS,
+  bandTone,
+  contributionLabel,
+  fmtDateTime,
+  fmtNum,
+  fmtScore,
+  shortHash,
+} from "@/lib/format";
 import { sanitizeNarrative, narrativeToText } from "@/lib/sanitize";
 import type { CanonicalResult, ReportPayload, ReportType } from "@/lib/types";
 
@@ -62,16 +71,19 @@ export default function ReportReader({
   assessmentId,
   allowedTypes,
   initialType,
+  onBack,
 }: {
   assessmentId: number;
   allowedTypes: ReportType[];
   initialType?: ReportType;
+  onBack?: () => void;
 }) {
   const { pushToast, profile, user } = useApp();
   const [preferred, setPreferred] = useState<ReportType>(initialType ?? allowedTypes[0] ?? "candidate");
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenStep, setRegenStep] = useState<0 | 1 | 2>(0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("overview");
 
   const res = useAsyncData(async () => {
     // Try the preferred type first; if it isn't generated yet, fall back to
@@ -137,6 +149,26 @@ export default function ReportReader({
     return s;
   }, [structured]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || sections.length === 0 || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (visible?.target?.id?.startsWith("rsec-")) {
+          setActiveSection(visible.target.id.slice(5));
+        }
+      },
+      { rootMargin: "-90px 0px -65% 0px", threshold: 0.05 }
+    );
+    for (const s of sections) {
+      const el = document.getElementById(`rsec-${s.id}`);
+      if (el) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, [sections]);
+
   if (res.loading) {
     return (
       <Card className="p-8 space-y-4" aria-busy="true">
@@ -183,57 +215,47 @@ export default function ReportReader({
   }
 
   const goTo = (id: string) => {
+    setActiveSection(id);
     document.getElementById(`rsec-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  return (
-    <div className="grid lg:grid-cols-[220px_1fr] gap-8 items-start">
-      {/* ---------------- TOC ---------------- */}
-      <nav aria-label="Report sections" className="hidden lg:block sticky top-24 no-print">
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3 mb-3">Contents</p>
-        <ul className="space-y-1 border-l border-line">
-          {sections.map((s) => (
-            <li key={s.id}>
-              <button
-                onClick={() => goTo(s.id)}
-                className="w-full text-left pl-4 py-1.5 text-[13.5px] text-ink-2 hover:text-brand hover:border-brand transition-colors cursor-pointer -ml-px border-l-2 border-transparent"
-              >
-                {s.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-        {allowedTypes.length > 1 && (
-          <div className="mt-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-3 mb-2">Report type</p>
-            <div className="flex flex-col gap-1.5">
-              {allowedTypes.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setPreferred(t)}
-                  aria-pressed={t === type}
-                  className={`h-8 px-3 rounded-[8px] text-[12.5px] font-semibold capitalize text-left transition-colors cursor-pointer ${
-                    t === type ? "bg-ink text-[#F3F1EA]" : "bg-surface-2 text-ink-2 hover:text-ink"
-                  }`}
-                >
-                  {t} report
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </nav>
+  const sortedStreams = [...(structured.streams || [])].sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99));
+  const topStream = sortedStreams[0] ?? null;
+  const topInterests = (structured.riasec?.holland_code || "")
+    .split("")
+    .map((k) => {
+      const meta = RIASEC_DIMENSIONS.find((d) => d.key === k);
+      const val = structured.riasec?.[k as "R" | "I" | "A" | "S" | "E" | "C"] ?? null;
+      return meta ? { ...meta, score: val } : null;
+    })
+    .filter((x): x is { key: string; label: string; blurb: string; score: number | null } => Boolean(x));
 
-      {/* ---------------- content ---------------- */}
-      <div className="print-area min-w-0">
-        {/* actions */}
-        <div className="flex flex-wrap items-center gap-2 mb-5 no-print">
+  return (
+    <div className="space-y-6">
+      {/* ---------------- top action bar ---------------- */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-line no-print">
+        <div className="flex items-center gap-3 min-w-0">
+          {onBack && (
+            <Button size="sm" variant="ghost" onClick={onBack} className="-ml-2">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M10 12.5 5.5 8 10 3.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Back to Results
+            </Button>
+          )}
+          <span className="hidden sm:inline text-[12.5px] font-medium text-ink-3 truncate">
+            Full Guidance Report
+            {structured.student?.first_name ? ` · ${structured.student.first_name}` : ""}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
           {allowedTypes.length > 1 && (
             <select
               aria-label="Report type"
               value={type}
               onChange={(e) => setPreferred(e.target.value as ReportType)}
-              className="lg:hidden h-9 rounded-[9px] border border-line-2 bg-surface px-3 text-[13px] font-semibold cursor-pointer"
+              className="lg:hidden h-9 rounded-[9px] border border-line-2 bg-surface px-3 text-[13px] font-semibold cursor-pointer capitalize"
             >
               {allowedTypes.map((t) => (
                 <option key={t} value={t}>{t} report</option>
@@ -255,176 +277,362 @@ export default function ReportReader({
             </Button>
           )}
         </div>
+      </div>
 
-        {/* header */}
-        <Card className="p-6 sm:p-8 print-block">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="font-display text-[24px] sm:text-[28px] font-bold tracking-[-0.02em] leading-tight">
-                {report.title}
-              </h1>
-              <p className="mt-2 text-[13.5px] text-ink-2">
-                {structured.student?.first_name}
-                {structured.student?.grade != null ? ` · Grade ${structured.student.grade}` : ""}
-                {structured.student?.board ? ` · ${structured.student.board}` : ""}
-              </p>
-            </div>
-            <Badge tone={report.status === "ready" ? "ok" : "warn"} dot>
-              {report.status === "ready" ? "Final" : report.status}
-            </Badge>
-          </div>
-          <dl className="mt-5 pt-4 border-t border-line grid grid-cols-2 sm:grid-cols-4 gap-4 text-[12.5px]">
-            <div>
-              <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10.5px]">Assessment version</dt>
-              <dd className="tnum font-bold mt-0.5">{structured.assessment?.version_code ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10.5px]">Generated</dt>
-              <dd className="tnum font-bold mt-0.5">{fmtDateTime(report.generated_at)}</dd>
-            </div>
-            <div>
-              <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10.5px]">Scoring method</dt>
-              <dd className="font-bold mt-0.5 truncate">Deterministic normative</dd>
-            </div>
-            <div>
-              <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10.5px]">Verification code</dt>
-              <dd className="tnum font-bold mt-0.5" title={report.structured_input_hash ?? ""}>
-                {shortHash(report.structured_input_hash)}
-              </dd>
-            </div>
-          </dl>
-          <p className="mt-4 text-[11.5px] text-ink-3 leading-relaxed">
-            The verification code identifies the exact assessment dataset this guidance report was built from. Scores are
-            deterministic and mathematically verified against official normative standards.
-          </p>
-        </Card>
+      {/* mobile / tablet section navigator */}
+      <nav aria-label="Quick section jump" className="lg:hidden flex flex-wrap gap-1.5 no-print">
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => goTo(s.id)}
+            className={`px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors cursor-pointer ${
+              activeSection === s.id
+                ? "bg-brand text-on-brand border-brand"
+                : "bg-surface text-ink-2 border-line hover:text-ink"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </nav>
 
-        {/* ---------- Overview + narrative ---------- */}
-        <section id="rsec-overview" className="mt-6 scroll-mt-24 print-block">
-          <h2 className="font-display text-[19px] font-bold mb-3">Overview</h2>
-          <Card className="p-6">
-            {report.narrative_html ? (
-              <div className="narrative" dangerouslySetInnerHTML={{ __html: sanitizeNarrative(report.narrative_html) }} />
-            ) : (
-              <p className="text-[14px] text-ink-2">
-                The narrative summary isn't available for this report version. All calculated values
-                remain accurate below.
-              </p>
+      <div className="grid lg:grid-cols-[210px_1fr] gap-8 items-start">
+        {/* ---------------- desktop sticky TOC ---------------- */}
+        <aside className="hidden lg:block sticky top-20 no-print">
+          <Card className="p-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-3 mb-2.5 px-2">
+              Contents
+            </p>
+            <ul className="space-y-0.5">
+              {sections.map((s) => {
+                const on = activeSection === s.id;
+                return (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => goTo(s.id)}
+                      className={`w-full text-left px-3 py-2 rounded-[9px] text-[13px] transition-colors cursor-pointer ${
+                        on
+                          ? "bg-brand-mist text-brand font-semibold"
+                          : "text-ink-2 hover:bg-paper hover:text-ink"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {allowedTypes.length > 1 && (
+              <div className="mt-5 pt-4 border-t border-line">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-3 mb-2 px-1">
+                  Report audience
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {allowedTypes.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setPreferred(t)}
+                      aria-pressed={t === type}
+                      className={`h-8.5 px-3 rounded-[8px] text-[12.5px] font-semibold capitalize text-left transition-colors cursor-pointer ${
+                        t === type ? "bg-ink text-[#F3F1EA]" : "bg-surface-2 text-ink-2 hover:text-ink"
+                      }`}
+                    >
+                      {t} report
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </Card>
-        </section>
+        </aside>
 
-        {/* ---------- Aptitude ---------- */}
-        <section id="rsec-aptitude" className="mt-8 scroll-mt-24 print-block">
-          <h2 className="font-display text-[19px] font-bold mb-3">Aptitude</h2>
-          <Card className="p-6">
-            <AptitudePanel aptitude={structured.aptitude} />
-          </Card>
-        </section>
-
-        {/* ---------- Interests ---------- */}
-        <section id="rsec-interests" className="mt-8 scroll-mt-24 print-block">
-          <h2 className="font-display text-[19px] font-bold mb-3">Interests</h2>
-          <Card className="p-6">
-            <div className="grid md:grid-cols-[300px_1fr] gap-6 items-center">
-              <div className="max-w-[300px] mx-auto w-full">
-                <RiasecChart riasec={structured.riasec} compact />
-              </div>
+        {/* ---------------- main editorial document ---------------- */}
+        <div className="print-area min-w-0 space-y-8">
+          {/* executive cover card */}
+          <Card className="p-6 sm:p-8 border-t-4 border-t-brand print-block">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-ink-3">Holland Code</p>
-                <p className="tnum font-display text-[32px] font-bold tracking-[0.05em] text-brand mt-1">
-                  {structured.riasec.holland_code ?? "—"}
+                <Eyebrow>Official Psychometric Guidance Report</Eyebrow>
+                <h1 className="font-display text-[24px] sm:text-[30px] font-bold tracking-[-0.02em] leading-tight mt-2">
+                  {report.title}
+                </h1>
+                <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[13px] text-ink-2">
+                  <span className="font-semibold text-ink">{structured.student?.first_name ?? "Student"}</span>
+                  {structured.student?.grade != null && (
+                    <Badge tone="neutral">Grade {structured.student.grade}</Badge>
+                  )}
+                  {structured.student?.board && (
+                    <Badge tone="neutral">{structured.student.board}</Badge>
+                  )}
+                </div>
+              </div>
+              <Badge tone={report.status === "ready" ? "ok" : "warn"} dot className="shrink-0">
+                {report.status === "ready" ? "Final Report" : report.status}
+              </Badge>
+            </div>
+
+            <dl className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[12.5px]">
+              <div className="rounded-[10px] bg-paper border border-line/80 px-3.5 py-2.5">
+                <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10px]">Version</dt>
+                <dd className="tnum font-bold text-ink mt-0.5">{structured.assessment?.version_code ?? "—"}</dd>
+              </div>
+              <div className="rounded-[10px] bg-paper border border-line/80 px-3.5 py-2.5">
+                <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10px]">Generated</dt>
+                <dd className="tnum font-bold text-ink mt-0.5">{fmtDateTime(report.generated_at)}</dd>
+              </div>
+              <div className="rounded-[10px] bg-paper border border-line/80 px-3.5 py-2.5">
+                <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10px]">Scoring Method</dt>
+                <dd className="font-bold text-ink mt-0.5 truncate">Deterministic rules</dd>
+              </div>
+              <div className="rounded-[10px] bg-paper border border-line/80 px-3.5 py-2.5">
+                <dt className="text-ink-3 font-semibold uppercase tracking-[0.08em] text-[10px]">Verification Hash</dt>
+                <dd className="tnum font-bold text-ink mt-0.5 truncate" title={report.structured_input_hash ?? ""}>
+                  {shortHash(report.structured_input_hash)}
+                </dd>
+              </div>
+            </dl>
+
+            {/* executive snapshot metrics */}
+            <div className="mt-5 pt-5 border-t border-line grid sm:grid-cols-3 gap-3.5">
+              <div className="rounded-[12px] bg-paper/70 border border-line p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-3">Overall Aptitude</p>
+                <p className="tnum font-display text-[26px] font-bold text-ink mt-1">
+                  {fmtNum(structured.aptitude?.overall)}
+                  <span className="text-[13px] font-normal text-ink-3 ml-1">/ 100</span>
                 </p>
-                <p className="text-[13px] text-ink-2 mt-2 leading-relaxed">
-                  These are the interest patterns strongest in {structured.student?.first_name ?? "the student"}&rsquo;s
-                  responses.
+                <p className="text-[12px] text-ink-3 mt-0.5">Reasoning composite index</p>
+              </div>
+              <div className="rounded-[12px] bg-paper/70 border border-line p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-3">Holland Interest Code</p>
+                <p className="tnum font-display text-[26px] font-bold tracking-[0.06em] text-brand mt-1">
+                  {structured.riasec?.holland_code ?? "—"}
+                </p>
+                <p className="text-[12px] text-ink-3 mt-0.5 truncate">
+                  {topInterests.map((i) => i.label).join(" · ") || "Primary interest themes"}
+                </p>
+              </div>
+              <div className="rounded-[12px] bg-paper/70 border border-line p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-ink-3">Work Style & Top Fit</p>
+                <p className="tnum font-display text-[26px] font-bold text-ink mt-1">
+                  {fmtScore(structured.grit?.normalized_index, 0)}
+                  <span className="text-[13px] font-normal text-ink-3 ml-1">/ 100</span>
+                </p>
+                <p className="text-[12px] text-ink-2 mt-0.5 truncate">
+                  {topStream ? `Top fit: ${topStream.name}` : "Work habits index"}
                 </p>
               </div>
             </div>
-          </Card>
-        </section>
 
-        {/* ---------- Work style ---------- */}
-        <section id="rsec-workstyle" className="mt-8 scroll-mt-24 print-block">
-          <h2 className="font-display text-[19px] font-bold mb-3">Work Style</h2>
-          <Card className="p-6">
-            <WorkStylePanel grit={structured.grit} />
+            <p className="mt-4 text-[11.5px] text-ink-3 leading-relaxed">
+              The verification hash uniquely identifies the assessment responses this document was generated from — stored scores remain fixed and reproducible.
+            </p>
           </Card>
-        </section>
 
-        {/* ---------- Stream exploration ---------- */}
-        <section id="rsec-streams" className="mt-8 scroll-mt-24 print-block">
-          <h2 className="font-display text-[19px] font-bold mb-3">Stream Exploration</h2>
-          <div className="space-y-3">
-            {[...(structured.streams || [])]
-              .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99))
-              .map((s) => (
-                <Card key={s.id} className="p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="tnum w-7 h-7 rounded-full bg-surface-2 text-[12px] font-bold flex items-center justify-center">
-                        {s.rank}
-                      </span>
-                      <p className="font-semibold text-[15px]">{s.name}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="tnum font-display text-[20px] font-bold">
-                        {s.score === null ? "—" : Number(s.score).toFixed(1).replace(/\.0$/, "")}
-                      </span>
-                      <Badge tone={bandTone(s.band)} dot>{s.band ?? "—"}</Badge>
-                    </div>
-                  </div>
-                  {s.contributions?.length > 0 && (
-                    <div className="mt-3.5 pt-3 border-t border-line grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                      {s.contributions.map((c) => (
-                        <p key={c.component} className="text-[12.5px] text-ink-2 flex justify-between gap-3">
-                          <span>{c.component.startsWith("riasec_") ? "Interest" : "Ability"} · {c.component.replace(/^(riasec|grit)_?/, "")}</span>
-                          <span className="tnum text-ink-3">
-                            {c.value ?? "—"} × {c.weight != null ? `${Math.round(c.weight * 100)}%` : "—"} → <span className="font-semibold text-ink">+{c.contribution != null ? Number(c.contribution).toFixed(1) : "—"}</span>
+          {/* ---------- Overview + narrative ---------- */}
+          <section id="rsec-overview" className="scroll-mt-24 print-block">
+            <div className="mb-3">
+              <Eyebrow>Summary</Eyebrow>
+              <h2 className="font-display text-[20px] font-bold mt-1">Overview</h2>
+            </div>
+            <Card className="p-6 sm:p-7">
+              {report.narrative_html ? (
+                <div className="narrative" dangerouslySetInnerHTML={{ __html: sanitizeNarrative(report.narrative_html) }} />
+              ) : (
+                <p className="text-[14px] text-ink-2">
+                  The narrative summary isn&rsquo;t available for this report version. All calculated values remain accurate below.
+                </p>
+              )}
+            </Card>
+          </section>
+
+          {/* ---------- Aptitude ---------- */}
+          <section id="rsec-aptitude" className="scroll-mt-24 print-block">
+            <div className="mb-3">
+              <Eyebrow>Reasoning Abilities</Eyebrow>
+              <h2 className="font-display text-[20px] font-bold mt-1">Aptitude Profile</h2>
+              <p className="text-[13px] text-ink-2 mt-0.5">
+                Normalized 0–100 assessment indices across measured cognitive reasoning areas.
+              </p>
+            </div>
+            <Card className="p-6">
+              <AptitudePanel aptitude={structured.aptitude} />
+            </Card>
+          </section>
+
+          {/* ---------- Interests ---------- */}
+          <section id="rsec-interests" className="scroll-mt-24 print-block">
+            <div className="mb-3">
+              <Eyebrow>RIASEC Profile</Eyebrow>
+              <h2 className="font-display text-[20px] font-bold mt-1">Interests &amp; Work Preferences</h2>
+            </div>
+            <Card className="p-6">
+              <div className="grid md:grid-cols-[290px_1fr] gap-7 items-center">
+                <div className="max-w-[290px] mx-auto w-full">
+                  <RiasecChart riasec={structured.riasec} compact />
+                </div>
+                <div>
+                  <p className="text-[11.5px] font-bold uppercase tracking-[0.12em] text-ink-3">Holland Code</p>
+                  <p className="tnum font-display text-[32px] font-bold tracking-[0.06em] text-brand mt-1">
+                    {structured.riasec.holland_code ?? "—"}
+                  </p>
+                  <p className="text-[13.5px] text-ink-2 mt-1.5 leading-relaxed">
+                    Strongest interest environments reflected in {structured.student?.first_name ?? "the student"}&rsquo;s responses:
+                  </p>
+                  {topInterests.length > 0 && (
+                    <div className="mt-4 space-y-2.5">
+                      {topInterests.map((theme, idx) => (
+                        <div key={theme.key} className="rounded-[10px] bg-paper border border-line/80 px-3.5 py-2.5 flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-[13px] font-semibold text-ink">
+                              {idx + 1}. {theme.label} <span className="text-ink-3 font-normal">({theme.key})</span>
+                            </p>
+                            <p className="text-[12px] text-ink-3 mt-0.5">{theme.blurb}</p>
+                          </div>
+                          <span className="tnum text-[14px] font-bold text-brand shrink-0">
+                            {fmtScore(theme.score, 0)}
                           </span>
-                        </p>
+                        </div>
                       ))}
                     </div>
                   )}
-                </Card>
-              ))}
-          </div>
-        </section>
-
-        {/* ---------- Parent alignment ---------- */}
-        {structured.congruence?.has_parent_data && (
-          <section id="rsec-alignment" className="mt-8 scroll-mt-24 print-block">
-            <h2 className="font-display text-[19px] font-bold mb-3">Parent Alignment</h2>
-            <AlignmentCard congruence={structured.congruence} studentName={structured.student?.first_name ?? "Student"} />
-          </section>
-        )}
-
-        {/* ---------- Next steps ---------- */}
-        <section id="rsec-next" className="mt-8 mb-12 scroll-mt-24 print-block">
-          <h2 className="font-display text-[19px] font-bold mb-3">Next Steps</h2>
-          <Card className="p-6">
-            <p className="text-[14px] text-ink-2 leading-relaxed">
-              Use these results as a starting point for conversations — with family, teachers and
-              counselors. Explore the top streams, read the &ldquo;why&rdquo; behind each fit, and
-              revisit after major exams: profiles evolve as students grow.
-            </p>
-            {structured.limitations?.length > 0 && (
-              <div className="mt-5 pt-4 border-t border-line">
-                <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-ink-3 mb-2.5">
-                  What this assessment is not
-                </p>
-                <ul className="space-y-1.5">
-                  {structured.limitations.map((l, i) => (
-                    <li key={i} className="text-[13px] text-ink-2 flex gap-2 leading-relaxed">
-                      <span aria-hidden="true" className="text-ink-3">–</span>
-                      {l}
-                    </li>
-                  ))}
-                </ul>
+                </div>
               </div>
-            )}
-          </Card>
-        </section>
+            </Card>
+          </section>
+
+          {/* ---------- Work style ---------- */}
+          <section id="rsec-workstyle" className="scroll-mt-24 print-block">
+            <div className="mb-3">
+              <Eyebrow>Habits &amp; Mindset</Eyebrow>
+              <h2 className="font-display text-[20px] font-bold mt-1">Work Style</h2>
+            </div>
+            <Card className="p-6">
+              <WorkStylePanel grit={structured.grit} />
+            </Card>
+          </section>
+
+          {/* ---------- Stream exploration ---------- */}
+          <section id="rsec-streams" className="scroll-mt-24 print-block">
+            <div className="mb-3">
+              <Eyebrow>Weighted Fit Analysis</Eyebrow>
+              <h2 className="font-display text-[20px] font-bold mt-1">Stream Exploration</h2>
+              <p className="text-[13px] text-ink-2 mt-0.5">
+                Every stream score shows its exact contribution math: measured score × configured rule weight.
+              </p>
+            </div>
+            <div className="space-y-3.5">
+              {sortedStreams.map((s) => {
+                const isTop3 = (s.rank ?? 99) <= 3;
+                const scoreNum = s.score === null ? null : Number(s.score);
+                return (
+                  <Card key={s.id} className={`p-5 sm:p-6 ${isTop3 ? "border-brand/35" : ""}`}>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span
+                          className={`tnum w-8 h-8 rounded-full text-[13px] font-bold flex items-center justify-center shrink-0 ${
+                            isTop3 ? "bg-brand text-on-brand" : "bg-surface-2 text-ink-2"
+                          }`}
+                        >
+                          {s.rank}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-display font-bold text-[16px] text-ink leading-snug">{s.name}</p>
+                          {s.career_clusters && s.career_clusters.length > 0 && (
+                            <p className="text-[12px] text-ink-3 mt-0.5">
+                              {s.career_clusters.slice(0, 3).join(" · ")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-right">
+                          <span className="tnum font-display text-[22px] font-bold text-ink">
+                            {scoreNum === null ? "—" : scoreNum.toFixed(1).replace(/\.0$/, "")}
+                          </span>
+                          <span className="text-[12px] text-ink-3 ml-1">/ 100</span>
+                        </div>
+                        <Badge tone={bandTone(s.band)} dot>{s.band ?? "—"}</Badge>
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <Progress
+                        value={scoreNum ?? 0}
+                        tone={isTop3 ? "ok" : "brand"}
+                        label={`${s.name} fit score`}
+                      />
+                    </div>
+
+                    {s.contributions?.length > 0 && (
+                      <div className="mt-4 pt-3.5 border-t border-line grid sm:grid-cols-2 gap-2.5">
+                        {s.contributions.map((c) => (
+                          <div
+                            key={c.component}
+                            className="rounded-[10px] bg-paper/75 border border-line/70 px-3 py-2 flex items-center justify-between gap-3 text-[12.5px]"
+                          >
+                            <span className="font-medium text-ink truncate">
+                              {contributionLabel(c.component)}
+                            </span>
+                            <span className="tnum text-ink-3 whitespace-nowrap shrink-0">
+                              {c.value ?? "—"} × {c.weight != null ? `${Math.round(c.weight * 100)}%` : "—"} →{" "}
+                              <span className="font-bold text-brand-strong">
+                                +{c.contribution != null ? Number(c.contribution).toFixed(1) : "—"}
+                              </span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* ---------- Parent alignment ---------- */}
+          {structured.congruence?.has_parent_data && (
+            <section id="rsec-alignment" className="scroll-mt-24 print-block">
+              <div className="mb-3">
+                <Eyebrow>Family Perspective</Eyebrow>
+                <h2 className="font-display text-[20px] font-bold mt-1">Parent Alignment</h2>
+              </div>
+              <AlignmentCard congruence={structured.congruence} studentName={structured.student?.first_name ?? "Student"} />
+            </section>
+          )}
+
+          {/* ---------- Next steps ---------- */}
+          <section id="rsec-next" className="scroll-mt-24 mb-8 print-block">
+            <div className="mb-3">
+              <Eyebrow>Moving Forward</Eyebrow>
+              <h2 className="font-display text-[20px] font-bold mt-1">Next Steps</h2>
+            </div>
+            <Card className="p-6 space-y-5">
+              <p className="text-[14.5px] text-ink-2 leading-relaxed">
+                Use these results as a starting point for conversations — with family, teachers and
+                counselors. Explore the top streams, inspect the factor breakdown behind each fit, and
+                revisit after major exams as interests and skills mature.
+              </p>
+              {structured.limitations?.length > 0 && (
+                <div className="rounded-[12px] bg-paper border border-line p-4">
+                  <p className="text-[11.5px] font-bold uppercase tracking-[0.12em] text-ink-3 mb-2.5">
+                    What this assessment is not
+                  </p>
+                  <ul className="space-y-1.5">
+                    {structured.limitations.map((l, i) => (
+                      <li key={i} className="text-[13px] text-ink-2 flex gap-2 leading-relaxed">
+                        <span aria-hidden="true" className="text-brand font-bold">·</span>
+                        {l}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Card>
+          </section>
+        </div>
       </div>
 
       {/* ---------------- regenerate modal ---------------- */}
