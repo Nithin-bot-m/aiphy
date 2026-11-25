@@ -23,6 +23,9 @@ async function startOrResumeV2(req) {
 
   const version = await assessmentRepository.getVersionByCode('V2');
   if (!version) throw conflict('V2 assessment bank is not initialized.');
+  if (!version.is_active) {
+    throw conflict('V2 assessment is currently inactive. Ask an administrator to activate V2 in the Admin Console.');
+  }
 
   let assessment = await db.prepare(
     "SELECT * FROM assessments WHERE student_id = ? AND version_id = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1"

@@ -14,6 +14,14 @@ async function ensureV2Assessment(assessment) {
 }
 
 // ---------- Candidate Endpoints ----------
+exports.getStatus = asyncHandler(async (req, res) => {
+  const version = await assessmentRepository.getVersionByCode('V2');
+  res.json({
+    version_code: 'V2',
+    v2_active: Boolean(version?.is_active)
+  });
+});
+
 exports.startAssessment = asyncHandler(async (req, res) => {
   const data = await v2Service.startOrResumeV2(req);
   res.json({

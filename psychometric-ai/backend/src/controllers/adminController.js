@@ -54,7 +54,10 @@ exports.getDashboard = asyncHandler(async (req, res) => {
 
   const versions = await db.prepare(`
     SELECT v.id, v.version_code, v.name, v.is_active, v.created_at,
-           (SELECT COUNT(*) FROM questions q WHERE q.version_id = v.id AND q.is_active = 1) AS active_question_count
+           CASE WHEN v.version_code = 'V2'
+             THEN (SELECT COUNT(*) FROM v2_items vi WHERE vi.version_id = v.id AND vi.is_active = 1)
+             ELSE (SELECT COUNT(*) FROM questions q WHERE q.version_id = v.id AND q.is_active = 1)
+           END AS question_count
     FROM assessment_versions v ORDER BY v.id DESC
   `).all();
 
@@ -247,9 +250,37 @@ function pathToObject(path, value) {
 
 // ---------- Stream rules (versioned weights) ----------
 async function defaultActiveVersionId() {
+  const v1 = await db.prepare("SELECT id FROM assessment_versions WHERE version_code = 'V1' ORDER BY id DESC LIMIT 1").get();
+  if (v1?.id) return v1.id;
   const row = await db.prepare('SELECT id FROM assessment_versions WHERE is_active = 1 ORDER BY id DESC LIMIT 1').get();
   return row?.id;
 }
+
+exports.toggleVersion = asyncHandler(async (req, res) => {
+  const versionId = Number(req.params.id);
+  if (!Number.isInteger(versionId) || versionId <= 0) throw badRequest('Valid version id required.');
+  const existing = await db.prepare('SELECT * FROM assessment_versions WHERE id = ?').get(versionId);
+  if (!existing) throw notFound('Assessment version not found.');
+
+  const nextState = req.body?.is_active !== undefined
+    ? (req.body.is_active ? 1 : 0)
+    : (existing.is_active ? 0 : 1);
+
+  if (nextState === 0) {
+    const otherActive = await db.prepare('SELECT COUNT(*) AS c FROM assessment_versions WHERE is_active = 1 AND id != ?').get(versionId);
+    if (Number(otherActive?.c || 0) === 0) {
+      throw badRequest('At least one assessment version must remain active.');
+    }
+  }
+
+  await db.prepare('UPDATE assessment_versions SET is_active = ? WHERE id = ?').run(nextState, versionId);
+  const updated = await db.prepare('SELECT id, version_code, name, is_active, created_at FROM assessment_versions WHERE id = ?').get(versionId);
+  await logAudit(req, 'TOGGLE_ASSESSMENT_VERSION', 'ASSESSMENT_VERSION', versionId, {
+    version_code: existing.version_code,
+    is_active: Boolean(nextState)
+  });
+  res.json({ version: updated });
+});
 
 exports.getStreamRules = asyncHandler(async (req, res) => {
   const versionId = Number(req.query.version_id) || (await defaultActiveVersionId());

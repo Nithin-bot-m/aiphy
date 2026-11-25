@@ -108,6 +108,7 @@ router.get('/admin/prompts', authenticate, requireRole('admin'), adminController
 router.get('/admin/prompts/:id', authenticate, requireRole('admin'), adminController.getPromptDetail);
 router.put('/admin/prompts/:id', authenticate, requireRole('admin'), adminController.updatePrompt);
 router.get('/admin/audit-logs', authenticate, requireRole('admin'), adminController.getAuditLogs);
+router.post('/admin/versions/:id/toggle', authenticate, requireRole('admin'), adminController.toggleVersion);
 router.get('/admin/export/:type', authenticate, requireRole('admin'), adminController.exportData);
 router.get('/admin/llm/usage', authenticate, requireRole('admin'), adminController.getLlmUsage);
 router.post('/admin/retention/run', authenticate, requireRole('admin'), adminController.runRetention);
@@ -115,6 +116,7 @@ router.get('/admin/users/:id/export', authenticate, requireRole('admin'), adminC
 router.post('/admin/users/:id/erase', authenticate, requireRole('admin'), adminController.eraseUserData);
 
 // ---------- V2 Assessment, Parent Module 8 & Counsellor Mapping Console ----------
+router.get('/v2/status', authenticate, v2Controller.getStatus);
 router.post('/v2/assessments/start', authenticate, requireRole('candidate'), v2Controller.startAssessment);
 router.get('/v2/assessments/:assessmentId', authenticate, requireAssessmentOwnership('assessmentId'), v2Controller.getQuestions);
 router.post('/v2/assessments/:assessmentId/responses', authenticate, requireRole('candidate'), requireAssessmentOwnership('assessmentId'), v2Controller.saveResponse);

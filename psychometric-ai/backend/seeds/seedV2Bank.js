@@ -61,7 +61,7 @@ async function seedV2Bank({ logger = console } = {}) {
     const info = await db.prepare(`
       INSERT INTO assessment_versions (version_code, name, description, is_active)
       VALUES ('V2', 'Grade 10 & 12 Comprehensive Battery V2',
-        '8-module career & psychometric guidance battery (3,450 banked items): Profile, 16-Cluster Interests & Passion, Personality & Thinking, Aptitude & Creativity, Work Values, EQ SJTs, Confidence & Readiness, Dual-Parent Mirror M8.', 1)
+        '8-module career & psychometric guidance battery (3,450 banked items): Profile, 16-Cluster Interests & Passion, Personality & Thinking, Aptitude & Creativity, Work Values, EQ SJTs, Confidence & Readiness, Dual-Parent Mirror M8.', 0)
     `).run();
     version = { id: Number(info.lastInsertRowid), version_code: 'V2' };
   }

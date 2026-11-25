@@ -230,6 +230,11 @@ export const api = {
       const suffix = q.toString() ? `?${q.toString()}` : "";
       return request<Record<string, unknown>>(`admin/audit-logs${suffix}`);
     },
+    toggleVersion: (id: number, isActive?: boolean) =>
+      request<{ version: Record<string, unknown> }>(`admin/versions/${id}/toggle`, {
+        method: "POST",
+        body: isActive === undefined ? {} : { is_active: isActive },
+      }),
     export: (type: string) => request<Record<string, unknown>>(`admin/export/${type}`),
     llmUsage: () => request<Record<string, unknown>>("admin/llm/usage"),
     retentionRun: (dryRun: boolean) =>
@@ -240,6 +245,7 @@ export const api = {
   },
 
   v2: {
+    status: () => request<{ version_code: string; v2_active: boolean }>("v2/status"),
     start: () =>
       request<{
         assessment_id: number;

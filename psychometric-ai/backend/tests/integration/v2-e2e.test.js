@@ -90,7 +90,35 @@ before(async () => {
 
 after(async () => { await ctx.close(); });
 
-test('V2 end-to-end: Grade 12 adaptation, extended pacing accommodation, completion & 16-cluster results', async () => {
+test('V2 lifecycle: inactive by default, admin toggle RBAC, and Grade 12 completion', async () => {
+  const statusBefore = await api(ctx.baseUrl, 'GET', '/v2/status', { token: student.token });
+  assert.equal(statusBefore.status, 200);
+  assert.equal(statusBefore.json.v2_active, false);
+
+  // Starting V2 while inactive must fail cleanly with 409
+  const blockedStart = await api(ctx.baseUrl, 'POST', '/v2/assessments/start', { token: student.token });
+  assert.equal(blockedStart.status, 409);
+
+  // Admin dashboard lists V2 with 3450 question count and inactive status
+  const dash = (await api(ctx.baseUrl, 'GET', '/admin/dashboard', { token: admin.token })).json;
+  const v2Ver = dash.assessment_versions.find((v) => v.version_code === 'V2');
+  assert.ok(v2Ver);
+  assert.equal(Boolean(v2Ver.is_active), false);
+  assert.equal(Number(v2Ver.question_count), 3450);
+
+  // Student and parent cannot toggle version activation
+  assert.equal((await api(ctx.baseUrl, 'POST', `/admin/versions/${v2Ver.id}/toggle`, { token: student.token })).status, 403);
+  assert.equal((await api(ctx.baseUrl, 'POST', `/admin/versions/${v2Ver.id}/toggle`, { token: parent1.token })).status, 403);
+
+  // Admin activates V2
+  const act = await api(ctx.baseUrl, 'POST', `/admin/versions/${v2Ver.id}/toggle`, {
+    token: admin.token,
+    body: { is_active: true }
+  });
+  assert.equal(act.status, 200);
+  assert.equal(Boolean(act.json.version.is_active), true);
+  assert.equal((await api(ctx.baseUrl, 'GET', '/v2/status', { token: student.token })).json.v2_active, true);
+
   const start = await api(ctx.baseUrl, 'POST', '/v2/assessments/start', { token: student.token });
   assert.equal(start.status, 200);
   assessmentId = start.json.assessment_id;
@@ -207,4 +235,21 @@ test('V2 Parent Module 8: dual-parent isolation, P11 consent gate, and RBAC on c
   assert.ok(auditRes.json.total_v2_completed >= 1);
   assert.equal(auditRes.json.grade_norms.grade_12.completed_n >= 1, true);
   assert.equal(auditRes.json.grade_norms.grade_12.norm_status, 'provisional');
+
+  // Admin can deactivate V2 again without allowing all versions to become inactive
+  const dashAfter = (await api(ctx.baseUrl, 'GET', '/admin/dashboard', { token: admin.token })).json;
+  const v1Ver = dashAfter.assessment_versions.find((v) => v.version_code === 'V1');
+  const v2Ver = dashAfter.assessment_versions.find((v) => v.version_code === 'V2');
+  const deactV2 = await api(ctx.baseUrl, 'POST', `/admin/versions/${v2Ver.id}/toggle`, {
+    token: admin.token,
+    body: { is_active: false }
+  });
+  assert.equal(deactV2.status, 200);
+  assert.equal((await api(ctx.baseUrl, 'GET', '/v2/status', { token: student.token })).json.v2_active, false);
+
+  const blockAllOff = await api(ctx.baseUrl, 'POST', `/admin/versions/${v1Ver.id}/toggle`, {
+    token: admin.token,
+    body: { is_active: false }
+  });
+  assert.equal(blockAllOff.status, 400);
 });

@@ -78,9 +78,13 @@ exports.getProgress = asyncHandler(async (req, res) => {
 // ---------- Results ----------
 exports.listAssessments = asyncHandler(async (req, res) => {
   const student = await requireStudent(req);
-  const rows = await db.prepare(
-    'SELECT id, status, current_step, started_at, completed_at FROM assessments WHERE student_id = ? ORDER BY id DESC LIMIT 20'
-  ).all(student.id);
+  const rows = await db.prepare(`
+    SELECT a.id, a.status, a.current_step, a.started_at, a.completed_at, av.version_code
+    FROM assessments a
+    JOIN assessment_versions av ON a.version_id = av.id
+    WHERE a.student_id = ?
+    ORDER BY a.id DESC LIMIT 20
+  `).all(student.id);
   res.json({ assessments: rows });
 });
 

@@ -46,10 +46,11 @@ interface ProfileView {
 
 function useCandidateHomeData() {
   return useAsyncData(async () => {
-    const [rawProfile, assessments, results, v2Results, requests] = await Promise.all([
+    const [rawProfile, assessments, results, v2Status, v2Results, requests] = await Promise.all([
       api.candidate.profile() as Promise<Record<string, unknown>>,
       api.candidate.listAssessments() as Promise<AssessmentsList>,
       api.candidate.results() as Promise<ResultsPayload | null>,
+      api.v2.status().catch(() => ({ version_code: "V2", v2_active: false })),
       api.v2.myResults().catch(() => null) as Promise<V2ResultEnvelope | null>,
       api.candidate.parentRequests() as Promise<{ pending?: ParentRequestRow[] }>,
     ]);
@@ -58,7 +59,13 @@ function useCandidateHomeData() {
       parent_links: (rawProfile.parent_links as ParentLinkRow[]) ?? [],
       pending_parent_requests: requests.pending ?? [],
     } as ProfileView;
-    return { profile, assessments: assessments.assessments ?? [], results, v2Results };
+    return {
+      profile,
+      assessments: assessments.assessments ?? [],
+      results,
+      v2Active: Boolean(v2Status.v2_active),
+      v2Results,
+    };
   }, []);
 }
 
@@ -82,6 +89,7 @@ export function CandidateHome({ navigate }: { navigate: (to: string) => void }) 
   const name =
     data?.profile?.full_name || String((profile as { full_name?: string } | null)?.full_name ?? user?.email ?? "there");
   const inProgress = data?.assessments.find((a) => a.status === "in_progress");
+  const v2Active = Boolean(data?.v2Active);
   const v2Res = data?.v2Results?.available && data?.v2Results?.result ? data.v2Results : null;
   const result = data?.results?.result as CanonicalResult | undefined;
   const pending = data?.profile?.pending_parent_requests ?? [];
@@ -158,9 +166,11 @@ export function CandidateHome({ navigate }: { navigate: (to: string) => void }) 
                 <Button variant="secondary" onClick={() => navigate("/explore")}>
                   Explore streams
                 </Button>
-                <Button variant="secondary" onClick={() => navigate("/assessment")}>
-                  Try V2 upgrade
-                </Button>
+                {v2Active && (
+                  <Button variant="secondary" onClick={() => navigate("/assessment")}>
+                    Try V2 upgrade
+                  </Button>
+                )}
                 <Button onClick={() => navigate("/results")}>View profile</Button>
               </div>
             </div>

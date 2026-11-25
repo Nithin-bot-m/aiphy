@@ -87,7 +87,7 @@ function initialPhase(
 }
 
 type BootResult =
-  | { mode: "v2_completed"; assessmentId: number }
+  | { mode: "completed"; assessmentId: number; v2Active: boolean }
   | { mode: "v2"; assessmentId: number; payload: V2AssessmentPayload }
   | { mode: "v1"; assessmentId: number; payload: AssessmentPayload };
 
@@ -95,8 +95,12 @@ export default function Assessment({ navigate }: { navigate: (to: string) => voi
   const [forceNewV2, setForceNewV2] = useState(false);
 
   const boot = useAsyncData(async (): Promise<BootResult> => {
-    const list = await api.candidate.listAssessments();
+    const [list, v2Status] = await Promise.all([
+      api.candidate.listAssessments(),
+      api.v2.status().catch(() => ({ version_code: "V2", v2_active: false })),
+    ]);
     const assessments = list.assessments ?? [];
+    const v2Active = Boolean(v2Status.v2_active);
     const inProgressV1 = assessments.find(
       (a) => a.status === "in_progress" && a.version_code === "V1"
     );
@@ -107,14 +111,23 @@ export default function Assessment({ navigate }: { navigate: (to: string) => voi
       (a) => a.status === "completed" && a.version_code === "V2"
     );
 
-    // Preserve any in-flight V1 assessment cleanly
+    // When V2 is inactive (or student has an in-progress V1 and isn't explicitly resuming V2), stay on V1
+    if (!v2Active) {
+      const startedV1 = await api.assessment.start();
+      if (startedV1.assessment.status === "completed") {
+        return { mode: "completed", assessmentId: startedV1.assessment.id, v2Active: false };
+      }
+      const payload = (await api.assessment.questions(startedV1.assessment.id)) as unknown as AssessmentPayload;
+      return { mode: "v1", assessmentId: startedV1.assessment.id, payload };
+    }
+
     if (!forceNewV2 && inProgressV1) {
       const payload = (await api.assessment.questions(inProgressV1.id)) as unknown as AssessmentPayload;
       return { mode: "v1", assessmentId: inProgressV1.id, payload };
     }
 
     if (!forceNewV2 && completedV2 && !inProgressV2) {
-      return { mode: "v2_completed", assessmentId: completedV2.id };
+      return { mode: "completed", assessmentId: completedV2.id, v2Active: true };
     }
 
     const started = await api.v2.start();
@@ -134,7 +147,7 @@ export default function Assessment({ navigate }: { navigate: (to: string) => voi
     );
   }
 
-  if (boot.data?.mode === "v2_completed") {
+  if (boot.data?.mode === "completed") {
     return (
       <div className="p-6 max-w-xl mx-auto mt-16">
         <Card className="p-8 text-center">
@@ -143,13 +156,15 @@ export default function Assessment({ navigate }: { navigate: (to: string) => voi
             You&apos;ve already completed this assessment
           </h2>
           <p className="mt-2 text-[14px] text-ink-2">
-            Your career cluster profile and pathway recommendations are ready to explore.
+            Your profile and pathway recommendations are ready to view.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button onClick={() => navigate("/results")}>View my profile</Button>
-            <Button variant="secondary" onClick={() => setForceNewV2(true)}>
-              Start a fresh V2 attempt
-            </Button>
+            {boot.data.v2Active && (
+              <Button variant="secondary" onClick={() => setForceNewV2(true)}>
+                Start a fresh V2 attempt
+              </Button>
+            )}
           </div>
         </Card>
       </div>

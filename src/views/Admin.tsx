@@ -211,7 +211,7 @@ export default function Admin() {
         />
       )}
       {tab === "fairness" && <FairnessAuditTab />}
-      {tab === "assessments" && <AssessmentsTab />}
+      {tab === "assessments" && <AssessmentsTab onError={(m) => pushToast(m, "bad")} onOk={(m) => pushToast(m, "success")} />}
       {tab === "questions" && <QuestionsTab onError={(m) => pushToast(m, "bad")} onOk={(m) => pushToast(m, "success")} />}
       {tab === "scoring" && <ScoringTab onError={(m) => pushToast(m, "bad")} onOk={(m) => pushToast(m, "success")} />}
       {tab === "llm" && <LlmTab onOk={(m) => pushToast(m, "success")} />}
@@ -470,28 +470,53 @@ function FairnessAuditTab() {
 
 /* ---------------- assessments / versions ---------------- */
 
-function AssessmentsTab() {
+function AssessmentsTab({ onError, onOk }: { onError: (m: string) => void; onOk: (m: string) => void }) {
   const res = useAsyncData(async () => (await api.admin.dashboard()) as unknown as AdminDashboard, []);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+
+  const toggle = async (v: { id: number; version_code: string; is_active?: number | boolean }) => {
+    setTogglingId(v.id);
+    try {
+      await api.admin.toggleVersion(v.id, !v.is_active);
+      onOk(`${v.version_code} is now ${!v.is_active ? "active" : "inactive"}.`);
+      res.reload();
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Could not change version status.");
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   return (
     <div>
       <AdminTitle
         title="Assessment versions"
-        sub="Question banks are versioned — completed assessments stay reproducible against the version they used."
+        sub="Question banks are versioned — activate or pause V2 rollout at any time without affecting completed V1 records."
       />
       {res.loading ? (
         <Skeleton className="h-48 rounded-card" />
       ) : res.error ? (
         <ErrorState message={res.error.message} onRetry={res.reload} />
       ) : (
-        <TableShell head={["Version", "Name", "Status", "Questions"]} emptyText="No versions configured.">
+        <TableShell head={["Version", "Name", "Questions", "Status", "Action"]} emptyText="No versions configured.">
           {(res.data?.assessment_versions ?? []).map((v, i) => (
             <tr key={v.id ?? i} className="bg-surface">
               <td className="px-4 py-3 tnum font-bold">{v.version_code}</td>
               <td className="px-4 py-3 text-ink-2">{v.name ?? "—"}</td>
-              <td className="px-4 py-3">
-                <Badge tone={v.is_active ? "ok" : "neutral"} dot>{v.is_active ? "Active" : "Archived"}</Badge>
-              </td>
               <td className="px-4 py-3 tnum">{v.question_count ?? "—"}</td>
+              <td className="px-4 py-3">
+                <Badge tone={v.is_active ? "ok" : "neutral"} dot>{v.is_active ? "Active" : "Inactive"}</Badge>
+              </td>
+              <td className="px-4 py-3">
+                <Button
+                  size="sm"
+                  variant={v.is_active ? "secondary" : "primary"}
+                  loading={togglingId === v.id}
+                  onClick={() => toggle(v)}
+                >
+                  {v.is_active ? "Deactivate" : `Activate ${v.version_code}`}
+                </Button>
+              </td>
             </tr>
           ))}
         </TableShell>
