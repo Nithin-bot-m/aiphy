@@ -147,7 +147,8 @@ function validateQuestionPayload(body, { partial = false } = {}) {
 }
 
 exports.createQuestion = asyncHandler(async (req, res) => {
-  const version = await db.prepare('SELECT id FROM assessment_versions WHERE is_active = 1 ORDER BY id DESC LIMIT 1').get();
+  const version = await db.prepare("SELECT id FROM assessment_versions WHERE version_code = 'V1' ORDER BY id DESC LIMIT 1").get()
+    || await db.prepare('SELECT id FROM assessment_versions WHERE is_active = 1 ORDER BY id DESC LIMIT 1').get();
   if (!version) throw badRequest('No active assessment version.');
   const data = validateQuestionPayload(req.body);
   const { options } = req.body;

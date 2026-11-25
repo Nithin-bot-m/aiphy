@@ -84,13 +84,26 @@ async function getAssessmentById(id) {
   return await db.prepare('SELECT * FROM assessments WHERE id = ?').get(id);
 }
 
-async function getInProgressAssessment(studentId) {
+async function getInProgressAssessment(studentId, versionId = null) {
+  if (versionId != null) {
+    return await db.prepare(`
+      SELECT * FROM assessments WHERE student_id = ? AND version_id = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1
+    `).get(studentId, versionId);
+  }
   return await db.prepare(`
     SELECT * FROM assessments WHERE student_id = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1
   `).get(studentId);
 }
 
-async function getLatestCompletedAssessment(studentId) {
+async function getLatestCompletedAssessment(studentId, versionCode = 'V1') {
+  if (versionCode) {
+    return await db.prepare(`
+      SELECT a.* FROM assessments a
+      JOIN assessment_versions av ON a.version_id = av.id
+      WHERE a.student_id = ? AND a.status = 'completed' AND av.version_code = ?
+      ORDER BY a.id DESC LIMIT 1
+    `).get(studentId, versionCode);
+  }
   return await db.prepare(`
     SELECT * FROM assessments WHERE student_id = ? AND status = 'completed' ORDER BY id DESC LIMIT 1
   `).get(studentId);

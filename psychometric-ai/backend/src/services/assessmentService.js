@@ -21,10 +21,10 @@ async function startOrResume(req) {
   const student = await userRepository.findStudentByUserId(req.user.id);
   if (!student) throw notFound('Student profile not found.');
 
-  const version = await assessmentRepository.getActiveVersion();
+  const version = await assessmentRepository.getActiveVersion('V1');
   if (!version) throw conflict('No active assessment version is configured.');
 
-  let assessment = await assessmentRepository.getInProgressAssessment(student.id);
+  let assessment = await assessmentRepository.getInProgressAssessment(student.id, version.id);
   if (!assessment) {
     const id = await assessmentRepository.createAssessment({ studentId: student.id, versionId: version.id });
     assessment = await assessmentRepository.getAssessmentById(id);

@@ -252,4 +252,20 @@ test('V2 Parent Module 8: dual-parent isolation, P11 consent gate, and RBAC on c
     body: { is_active: false }
   });
   assert.equal(blockAllOff.status, 400);
+
+  // Orphaned in_progress V2 row while V2 is inactive must never poison V1 startOrResume (regression test for 0/0 bug)
+  await api(ctx.baseUrl, 'POST', `/admin/versions/${v2Ver.id}/toggle`, { token: admin.token, body: { is_active: true } });
+  const orphan = (await api(ctx.baseUrl, 'POST', '/auth/register', {
+    body: { email: 'v2-orphan@test.io', password: 'Password@123', role: 'candidate', full_name: 'Orphan V2', grade: 10, board: 'CBSE' }
+  })).json;
+  const startedV2Orphan = await api(ctx.baseUrl, 'POST', '/v2/assessments/start', { token: orphan.token });
+  assert.equal(startedV2Orphan.status, 200);
+  await api(ctx.baseUrl, 'POST', `/admin/versions/${v2Ver.id}/toggle`, { token: admin.token, body: { is_active: false } });
+
+  const v1Start = await api(ctx.baseUrl, 'POST', '/candidate/assessment/start', { token: orphan.token });
+  assert.equal(v1Start.status, 200);
+  assert.equal(v1Start.json.version.version_code, 'V1');
+  const v1Q = await api(ctx.baseUrl, 'GET', `/assessments/${v1Start.json.assessment.id}`, { token: orphan.token });
+  assert.equal(v1Q.status, 200);
+  assert.equal(v1Q.json.questions.length, 44);
 });

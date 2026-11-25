@@ -88,8 +88,10 @@ export function CandidateHome({ navigate }: { navigate: (to: string) => void }) 
 
   const name =
     data?.profile?.full_name || String((profile as { full_name?: string } | null)?.full_name ?? user?.email ?? "there");
-  const inProgress = data?.assessments.find((a) => a.status === "in_progress");
   const v2Active = Boolean(data?.v2Active);
+  const inProgress = data?.assessments.find(
+    (a) => a.status === "in_progress" && (v2Active || a.version_code !== "V2")
+  );
   const v2Res = data?.v2Results?.available && data?.v2Results?.result ? data.v2Results : null;
   const result = data?.results?.result as CanonicalResult | undefined;
   const pending = data?.profile?.pending_parent_requests ?? [];

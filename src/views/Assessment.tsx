@@ -201,6 +201,17 @@ export default function Assessment({ navigate }: { navigate: (to: string) => voi
   }
 
   const payload = boot.data.payload;
+  if (!payload.questions || payload.questions.length === 0) {
+    return (
+      <div className="p-6 max-w-xl mx-auto mt-10">
+        <ErrorState
+          title="No questions available yet"
+          message="Could not load questions for this assessment version. Please retry or sign out and back in."
+          onRetry={boot.reload}
+        />
+      </div>
+    );
+  }
   return (
     <V1Runner
       key={payload.assessment_id}
