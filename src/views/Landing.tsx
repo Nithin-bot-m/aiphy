@@ -26,15 +26,15 @@ function HeroVisual() {
   ];
   return (
     <div className="relative rounded-[22px] bg-inverse p-6 sm:p-7 shadow-pop overflow-hidden" aria-label="Illustration of a sample assessment profile">
-      {/* faint hexagon watermark */}
-      <svg aria-hidden="true" className="absolute -right-14 -top-14 w-72 h-72 opacity-[0.06]" viewBox="0 0 100 100">
+      {/* faint hexagon watermark anchored low-right so Grade 10 badge stays unobstructed */}
+      <svg aria-hidden="true" className="pointer-events-none absolute -right-16 -bottom-16 w-72 h-72 opacity-[0.05]" viewBox="0 0 100 100">
         <polygon points="50,4 90,27 90,73 50,96 10,73 10,27" fill="none" stroke="#fff" strokeWidth="1.4" />
         <polygon points="50,22 74,36 74,64 50,78 26,64 26,36" fill="none" stroke="#fff" strokeWidth="1" />
       </svg>
 
-      <div className="flex items-center justify-between">
+      <div className="relative z-10 flex items-center justify-between gap-2">
         <p className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#8FB5AF]">Sample profile</p>
-        <span className="text-[10.5px] font-semibold text-[#8FB5AF] border border-[#2A3B38] rounded-full px-2.5 py-0.5">
+        <span className="text-[10.5px] font-semibold text-[#8FB5AF] bg-[#14211F]/90 border border-[#2A3B38] rounded-full px-2.5 py-0.5 shrink-0">
           Grade 10
         </span>
       </div>

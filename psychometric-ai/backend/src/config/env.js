@@ -35,7 +35,7 @@ const env = {
   LLM_PROVIDER: (process.env.LLM_PROVIDER || '').toLowerCase(),
   // gemini-2.0-flash was RETIRED by Google (API returns 404 advising
   // gemini-3.8-flash) — new deployments default to the current flash model.
-  LLM_MODEL: process.env.LLM_MODEL || 'gemini-3.8-flash',
+  LLM_MODEL: process.env.LLM_MODEL || 'gemini-2.5-flash',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   // Optional relay/proxy base URL (e.g. https://my-relay.example.com).
   // Servers in regions where the Gemini API is geo-restricted can point this
@@ -105,5 +105,10 @@ if (!env.OTP_PROVIDER || env.OTP_PROVIDER === 'auto') {
   else env.OTP_PROVIDER = 'console';
 }
 env.OTP_DELIVERY_READY = ['twilio', 'smtp', 'webhook'].includes(env.OTP_PROVIDER);
+env.SMS_OTP_READY = Boolean(
+  (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM_NUMBER) ||
+  env.OTP_PROVIDER === 'webhook'
+);
+env.EMAIL_DELIVERY_READY = Boolean(env.SMTP_HOST || env.OTP_PROVIDER === 'webhook');
 
 module.exports = env;

@@ -35,7 +35,7 @@ services:
       - key: LLM_PROVIDER
         value: auto
       - key: LLM_MODEL
-        value: gemini-3.8-flash     # 2.0-flash was retired by Google
+        value: gemini-2.5-flash     # current Gemini Flash model
       - key: GEMINI_API_KEY
         sync: false                 # prompted at deploy: paste your key, or leave blank = offline narratives
       - key: LLM_DAILY_MAX_REQUESTS

@@ -7,47 +7,44 @@ const adminController = require('../controllers/adminController');
 const reportController = require('../controllers/reportController');
 const v2Controller = require('../controllers/v2Controller');
 const { authenticate, requireRole, requireAssessmentOwnership, requireLinkedParentForAssessment, requireReportAccess } = require('../middleware/authMiddleware');
-const { authLimiter, otpLimiter, linkLimiter } = require('../middleware/rateLimiters');
+const { authLimiter, loginIpLimiter, otpLimiter, linkLimiter } = require('../middleware/rateLimiters');
 
 const router = express.Router();
 
-// ---------- Health ----------
+// ---------- Health (minimal public probe per F-12; full diagnostics at GET /api/admin/health) ----------
 router.get('/health', async (req, res) => {
-  const started = Date.now();
   let dbOk = false;
-  let driver = null;
   try {
-    const { db, DRIVER } = require('../config/db');
+    const { db } = require('../config/db');
     await db.prepare('SELECT 1 AS ping').get();
     dbOk = true;
-    driver = DRIVER;
   } catch {
     dbOk = false;
   }
-  const env = require('../config/env');
   res.status(dbOk ? 200 : 503).json({
     status: dbOk ? 'healthy' : 'degraded',
-    database: { ok: dbOk, driver },
-    llm: { provider: env.LLM_PROVIDER, model: env.LLM_MODEL },
-    otp: { provider: env.OTP_PROVIDER, delivery_ready: env.OTP_DELIVERY_READY },
-    version: '2.0.0',
-    timestamp: new Date().toISOString(),
-    uptime_s: Math.round(process.uptime()),
-    latency_ms: Date.now() - started
+    timestamp: new Date().toISOString()
   });
 });
 
 // ---------- Auth ----------
+router.get('/auth/capabilities', authController.getCapabilities);
 router.post('/auth/register', authLimiter, authController.register);
-router.post('/auth/login', authLimiter, authController.login);
+router.post('/auth/login', loginIpLimiter, authController.login);
 router.post('/auth/send-otp', otpLimiter, authController.sendOtp);
 router.post('/auth/verify-otp', otpLimiter, authController.verifyOtp);
+router.post('/auth/send-verification', authenticate, otpLimiter, authController.sendVerification);
+router.post('/auth/verify-email', authLimiter, authController.verifyEmail);
+router.post('/auth/forgot-password', otpLimiter, authController.forgotPassword);
+router.post('/auth/reset-password', authLimiter, authController.resetPassword);
+router.post('/auth/request-deletion', authenticate, authController.requestDeletion);
 router.post('/auth/logout', authenticate, authController.logout);
 router.get('/auth/me', authenticate, authController.getMe);
 
 // ---------- Candidate ----------
 router.get('/candidate/profile', authenticate, requireRole('candidate'), candidateController.getProfile);
 router.put('/candidate/profile', authenticate, requireRole('candidate'), candidateController.updateProfile);
+router.get('/candidate/export', authenticate, requireRole('candidate'), candidateController.exportMyData);
 router.get('/candidate/code', authenticate, requireRole('candidate'), candidateController.getMyStudentCode);
 
 router.get('/assessments', authenticate, requireRole('candidate'), candidateController.listAssessments);
@@ -107,6 +104,7 @@ router.put('/admin/scoring-config', authenticate, requireRole('admin'), adminCon
 router.get('/admin/prompts', authenticate, requireRole('admin'), adminController.getPrompts);
 router.get('/admin/prompts/:id', authenticate, requireRole('admin'), adminController.getPromptDetail);
 router.put('/admin/prompts/:id', authenticate, requireRole('admin'), adminController.updatePrompt);
+router.get('/admin/health', authenticate, requireRole('admin'), adminController.getSystemHealth);
 router.get('/admin/audit-logs', authenticate, requireRole('admin'), adminController.getAuditLogs);
 router.post('/admin/versions/:id/toggle', authenticate, requireRole('admin'), adminController.toggleVersion);
 router.get('/admin/export/:type', authenticate, requireRole('admin'), adminController.exportData);
@@ -114,6 +112,8 @@ router.get('/admin/llm/usage', authenticate, requireRole('admin'), adminControll
 router.post('/admin/retention/run', authenticate, requireRole('admin'), adminController.runRetention);
 router.get('/admin/users/:id/export', authenticate, requireRole('admin'), adminController.exportUserData);
 router.post('/admin/users/:id/erase', authenticate, requireRole('admin'), adminController.eraseUserData);
+router.post('/admin/users/:id/reset-password', authenticate, requireRole('admin'), adminController.resetUserPassword);
+router.post('/admin/users/:id/verify-email', authenticate, requireRole('admin'), adminController.verifyUserEmail);
 
 // ---------- V2 Assessment, Parent Module 8 & Counsellor Mapping Console ----------
 router.get('/v2/status', authenticate, v2Controller.getStatus);

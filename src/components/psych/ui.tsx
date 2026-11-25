@@ -369,7 +369,7 @@ export function ToastViewport() {
     <div
       aria-live="polite"
       aria-atomic="false"
-      className="fixed z-[60] bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-6 flex flex-col gap-2 w-[calc(100vw-32px)] sm:w-96 pointer-events-none"
+      className="fixed z-[60] top-4 sm:top-auto sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-6 flex flex-col gap-2 w-[calc(100vw-32px)] sm:w-96 pointer-events-none"
     >
       {toasts.map((t) => (
         <div
@@ -494,7 +494,7 @@ export function Tabs({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={`flex gap-1 overflow-x-auto no-scrollbar bg-surface border border-line rounded-[12px] p-1 ${className}`}
+      className={`flex flex-wrap gap-1 bg-surface border border-line rounded-[12px] p-1 ${className}`}
     >
       {tabs.map((t) => {
         const on = t.key === active;
@@ -504,7 +504,7 @@ export function Tabs({
             role="tab"
             aria-selected={on}
             onClick={() => onChange(t.key)}
-            className={`shrink-0 h-9 px-3.5 rounded-[8px] text-[13.5px] font-semibold transition-all duration-150 cursor-pointer ${
+            className={`shrink-0 min-h-[40px] px-3 py-1.5 rounded-[8px] text-[13px] font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${
               on ? "bg-ink text-[#F3F1EA]" : "text-ink-2 hover:bg-surface-2 hover:text-ink"
             }`}
           >

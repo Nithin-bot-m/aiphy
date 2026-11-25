@@ -1,10 +1,14 @@
 // Admin controller — dashboard, question bank, scoring config, prompts, audit,
 // LLM usage/quota, data governance (retention, subject access & erasure).
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { db, transaction } = require('../config/db');
+const env = require('../config/env');
+const userRepository = require('../repositories/userRepository');
 const { getScoringConfig, saveScoringConfig } = require('../services/configService');
 const llmQuota = require('../services/llm/llmQuota');
 const retention = require('../../scripts/retention');
-const { asyncHandler, badRequest, notFound } = require('../utils/helpers');
+const { asyncHandler, badRequest, notFound, assertStrongPassword } = require('../utils/helpers');
 const { logAudit } = require('../middleware/auditLogger');
 const { STREAM_KEYS } = require('../config/constants');
 
@@ -76,18 +80,20 @@ exports.getDashboard = asyncHandler(async (req, res) => {
 // ---------- Candidates ----------
 exports.getCandidates = asyncHandler(async (req, res) => {
   const rows = await db.prepare(`
-    SELECT s.id, s.full_name, s.grade, s.school_name, s.board, s.student_code, s.is_demo, s.created_at,
-           u.email, u.phone,
+    SELECT s.id, s.user_id, s.full_name, s.grade, s.school_name, s.board, s.student_code, s.is_demo, s.created_at,
+           u.email, u.phone, u.email_verified, u.deletion_requested_at,
            (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1) AS latest_completed_assessment_id,
            (SELECT av.version_code FROM assessments a JOIN assessment_versions av ON a.version_id = av.id WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1) AS version_code,
            (SELECT ss.stream_name FROM stream_scores ss WHERE ss.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1) AND ss.rank_order = 1) AS top_stream,
            (SELECT cs.congruence_pct FROM congruence_scores cs WHERE cs.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1)) AS congruence_pct,
+           (SELECT rs.holland_code FROM riasec_scores rs WHERE rs.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1)) AS v1_holland_code,
+           (SELECT aps.overall_idx FROM aptitude_scores aps WHERE aps.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1)) AS v1_overall_index,
            (SELECT v2r.summary_json FROM v2_scoring_results v2r WHERE v2r.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1)) AS v2_summary_json,
            (SELECT v2m.status FROM v2_counsellor_maps v2m WHERE v2m.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1)) AS counsellor_map_status
     FROM students s JOIN users u ON s.user_id = u.id
     ORDER BY s.id DESC
   `).all();
-  const candidates = rows.map(({ v2_summary_json, ...rest }) => {
+  const candidates = rows.map(({ v2_summary_json, v1_holland_code, v1_overall_index, ...rest }) => {
     let v2Summary = null;
     if (v2_summary_json) {
       try { v2Summary = JSON.parse(v2_summary_json); } catch { /* ignore */ }
@@ -95,6 +101,9 @@ exports.getCandidates = asyncHandler(async (req, res) => {
     const v2TopCluster = v2Summary?.top5?.[0] || null;
     return {
       ...rest,
+      latest_assessment_id: rest.latest_completed_assessment_id ?? null,
+      holland_code: v2Summary?.riasec_code || v2Summary?.holland_code || v1_holland_code || null,
+      overall_index: v2Summary?.aptitude_index ?? v2Summary?.overall_idx ?? (v1_overall_index != null ? Number(v1_overall_index) : null),
       top_stream: rest.top_stream || v2Summary?.streams_10?.[0]?.name || v2TopCluster || null,
       v2_riasec_code: v2Summary?.riasec_code || null,
       v2_top_clusters: v2Summary?.top5 || null
@@ -357,12 +366,12 @@ exports.updatePrompt = asyncHandler(async (req, res) => {
 exports.getAuditLogs = asyncHandler(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 100, 500);
   const offset = Math.max(Number(req.query.offset) || 0, 0);
-  const action = req.query.action ? String(req.query.action) : null;
+  const action = req.query.action ? String(req.query.action).trim() : null;
   const rows = action
     ? await db.prepare(`
         SELECT a.*, u.email, u.role FROM audit_logs a LEFT JOIN users u ON a.user_id = u.id
-        WHERE a.action = ? ORDER BY a.id DESC LIMIT ? OFFSET ?
-      `).all(action, limit, offset)
+        WHERE LOWER(a.action) LIKE LOWER(?) ORDER BY a.id DESC LIMIT ? OFFSET ?
+      `).all(`%${action}%`, limit, offset)
     : await db.prepare(`
         SELECT a.*, u.email, u.role FROM audit_logs a LEFT JOIN users u ON a.user_id = u.id
         ORDER BY a.id DESC LIMIT ? OFFSET ?
@@ -429,4 +438,74 @@ exports.eraseUserData = asyncHandler(async (req, res) => {
   const result = await retention.eraseUserData(userId);
   await logAudit(req, 'SUBJECT_ERASURE', 'USER', userId, { by: actingAdmin });
   res.json(result);
+});
+
+exports.resetUserPassword = asyncHandler(async (req, res) => {
+  const userId = Number(req.params.id);
+  if (!Number.isInteger(userId) || userId <= 0) throw badRequest('Valid user id required.');
+  const target = await userRepository.findUserById(userId);
+  if (!target) throw notFound('User not found.');
+  if (target.role === 'admin' && req.user.id !== userId) {
+    throw badRequest('Another admin account password cannot be reset via this endpoint.');
+  }
+
+  let plainPassword = req.body?.new_password ? String(req.body.new_password) : '';
+  const generated = !plainPassword;
+  if (generated) {
+    plainPassword = `Tmp#${crypto.randomBytes(6).toString('hex')}9a`;
+  }
+  assertStrongPassword(plainPassword, { minLength: target.role === 'admin' ? 12 : 8, email: target.email });
+
+  const hash = await bcrypt.hash(plainPassword, 12);
+  await userRepository.updateUserPasswordAndUnlock(userId, hash);
+  await logAudit(req, 'ADMIN_PASSWORD_RESET', 'USER', userId, { by: req.user.id, generated });
+  res.json({
+    reset: true,
+    user_id: userId,
+    ...(generated ? { temporary_password: plainPassword } : {}),
+    message: generated ? 'Temporary password generated and failed login lockouts cleared.' : 'Password updated cleanly.'
+  });
+});
+
+exports.verifyUserEmail = asyncHandler(async (req, res) => {
+  const userId = Number(req.params.id);
+  if (!Number.isInteger(userId) || userId <= 0) throw badRequest('Valid user id required.');
+  const target = await userRepository.findUserById(userId);
+  if (!target) throw notFound('User not found.');
+  await userRepository.markEmailVerified(userId);
+  await logAudit(req, 'ADMIN_VERIFY_EMAIL', 'USER', userId, { by: req.user.id });
+  res.json({ verified: true, user_id: userId });
+});
+
+exports.getSystemHealth = asyncHandler(async (req, res) => {
+  const started = Date.now();
+  let dbOk = false;
+  let driver = null;
+  try {
+    const { DRIVER } = require('../config/db');
+    await db.prepare('SELECT 1 AS ping').get();
+    dbOk = true;
+    driver = DRIVER;
+  } catch {
+    dbOk = false;
+  }
+  res.status(dbOk ? 200 : 503).json({
+    status: dbOk ? 'healthy' : 'degraded',
+    database: { ok: dbOk, driver },
+    llm: {
+      provider: env.LLM_PROVIDER,
+      model: env.LLM_MODEL,
+      gemini_configured: Boolean(env.GEMINI_API_KEY)
+    },
+    otp: {
+      provider: env.OTP_PROVIDER,
+      delivery_ready: env.OTP_DELIVERY_READY,
+      sms_ready: env.SMS_OTP_READY,
+      email_ready: env.EMAIL_DELIVERY_READY
+    },
+    version: '2.0.0',
+    timestamp: new Date().toISOString(),
+    uptime_s: Math.round(process.uptime()),
+    latency_ms: Date.now() - started
+  });
 });

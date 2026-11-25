@@ -93,6 +93,7 @@ type BootResult =
 
 export default function Assessment({ navigate }: { navigate: (to: string) => void }) {
   const [forceNewV2, setForceNewV2] = useState(false);
+  const [retakeModalOpen, setRetakeModalOpen] = useState(false);
 
   const boot = useAsyncData(async (): Promise<BootResult> => {
     const [list, v2Status] = await Promise.all([
@@ -161,12 +162,34 @@ export default function Assessment({ navigate }: { navigate: (to: string) => voi
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button onClick={() => navigate("/results")}>View my profile</Button>
             {boot.data.v2Active && (
-              <Button variant="secondary" onClick={() => setForceNewV2(true)}>
+              <Button variant="secondary" onClick={() => setRetakeModalOpen(true)}>
                 Start a fresh V2 attempt
               </Button>
             )}
           </div>
         </Card>
+        <Modal
+          open={retakeModalOpen}
+          onClose={() => setRetakeModalOpen(false)}
+          title="Start a new V2 assessment attempt?"
+          footer={
+            <div className="flex justify-end gap-2.5">
+              <Button variant="secondary" onClick={() => setRetakeModalOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setRetakeModalOpen(false);
+                  setForceNewV2(true);
+                }}
+              >
+                Start retake
+              </Button>
+            </div>
+          }
+        >
+          <p className="text-[13.5px] text-ink-2 leading-relaxed">
+            Your existing completed profile and reports remain active and visible to you and your linked parents until you finish and submit this new attempt.
+          </p>
+        </Modal>
       </div>
     );
   }
@@ -303,8 +326,10 @@ function V2Runner({
         return cur;
       }
       const next = cur + 1;
-      if (moduleOf(next) !== moduleOf(cur)) {
-        setTransitionModule(moduleOf(next));
+      const nextMod = questions[next]?.module;
+      const curMod = questions[cur]?.module;
+      if (nextMod !== curMod) {
+        setTransitionModule(nextMod);
         setPhase("transition");
       } else {
         setPhase("question");
@@ -661,8 +686,10 @@ function V1Runner({
         return cur;
       }
       const next = cur + 1;
-      if (moduleOf(next) !== moduleOf(cur)) {
-        setTransitionModule(moduleOf(next));
+      const nextMod = questions[next]?.module;
+      const curMod = questions[cur]?.module;
+      if (nextMod !== curMod) {
+        setTransitionModule(nextMod);
         setPhase("transition");
       } else {
         setPhase("question");

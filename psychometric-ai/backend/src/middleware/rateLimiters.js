@@ -22,13 +22,14 @@ function redisStore() {
 
 const store = redisStore();
 
-function makeLimiter({ windowMs, limit, message }) {
+function makeLimiter({ windowMs, limit, message, ...extra }) {
   return rateLimit({
     windowMs,
     limit,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: message },
+    ...extra,
     ...(store ? { store } : {}),
   });
 }
@@ -45,10 +46,19 @@ const authLimiter = makeLimiter({
   message: 'Too many authentication attempts. Try again in 15 minutes.'
 });
 
+// Strict per-IP failed-login limiter (F-01): ignores successful sign-ins so shared
+// school/family NAT networks are not penalized when multiple students sign in cleanly.
+const loginIpLimiter = makeLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  skipSuccessfulRequests: true,
+  message: 'Too many failed sign-in attempts from this network. Try again in 15 minutes.'
+});
+
 const otpLimiter = makeLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 5,
-  message: 'OTP request limit reached. Try again later.'
+  message: 'Too many verification or recovery requests. Try again in 15 minutes.'
 });
 
 const linkLimiter = makeLimiter({
@@ -57,4 +67,4 @@ const linkLimiter = makeLimiter({
   message: 'Too many link attempts. Try again in an hour.'
 });
 
-module.exports = { generalLimiter, authLimiter, otpLimiter, linkLimiter };
+module.exports = { generalLimiter, authLimiter, loginIpLimiter, otpLimiter, linkLimiter };

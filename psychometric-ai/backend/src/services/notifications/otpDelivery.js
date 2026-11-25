@@ -137,4 +137,41 @@ async function deliverOtp({ user, recipient, otp, channel }) {
   }
 }
 
-module.exports = { deliverOtp, maskRecipient, recordOutbox };
+const testNotices = [];
+
+async function sendEmailNotice({ userId = null, to, subject, message }) {
+  if (!to) return { delivered: false, provider: 'none' };
+  if (env.NODE_ENV === 'test') {
+    testNotices.push({ to, subject, message, timestamp: Date.now() });
+    if (testNotices.length > 50) testNotices.shift();
+  }
+  try {
+    if (env.SMTP_HOST) {
+      await sendViaSmtp({ recipient: to, subject, message });
+      await recordOutbox({ channel: 'email', recipient: to, provider: 'smtp', status: 'sent', userId });
+      return { delivered: true, provider: 'smtp' };
+    }
+    if (env.OTP_PROVIDER === 'webhook' && env.OTP_WEBHOOK_URL) {
+      await sendViaWebhook({ recipient: to, channel: 'email', message: `${subject}\n\n${message}` });
+      await recordOutbox({ channel: 'email', recipient: to, provider: 'webhook', status: 'sent', userId });
+      return { delivered: true, provider: 'webhook' };
+    }
+    if (env.NODE_ENV !== 'production') {
+      console.info(`[mail] queued notice (${subject}) for ${maskRecipient(to)}`);
+    }
+    await recordOutbox({ channel: 'email', recipient: to, provider: 'console', status: 'sent', userId });
+    return { delivered: false, provider: 'console' };
+  } catch (err) {
+    await recordOutbox({ channel: 'email', recipient: to, provider: env.SMTP_HOST ? 'smtp' : env.OTP_PROVIDER, status: 'failed', error: err.message, userId });
+    return { delivered: false, provider: env.SMTP_HOST ? 'smtp' : env.OTP_PROVIDER, error: err.message };
+  }
+}
+
+function getLastTestNotice(recipient) {
+  for (let i = testNotices.length - 1; i >= 0; i -= 1) {
+    if (!recipient || testNotices[i].to === recipient) return testNotices[i];
+  }
+  return null;
+}
+
+module.exports = { deliverOtp, sendEmailNotice, getLastTestNotice, maskRecipient, recordOutbox };

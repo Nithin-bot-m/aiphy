@@ -23,6 +23,9 @@ export interface SessionUser {
   role: Role;
   email: string | null;
   phone: string | null;
+  isDemo?: boolean;
+  emailVerified?: boolean;
+  deletionRequestedAt?: string | null;
 }
 
 export interface Toast {
@@ -62,7 +65,7 @@ const IN_PAGE_ANCHORS = ["how", "trust", "principles", "features", "main"];
 
 export function currentPath(): string {
   if (typeof window === "undefined") return "/";
-  const h = window.location.hash.replace(/^#\/?/, "");
+  const h = window.location.hash.replace(/^#\/?/, "").split("?")[0];
   if (!h || IN_PAGE_ANCHORS.includes(h.toLowerCase())) return "/";
   return "/" + h.replace(/^\//, "");
 }
@@ -136,12 +139,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const adoptSession = useCallback(
-    (me: { user: { id: number; role: string; email: string | null; phone: string | null }; profile: Record<string, unknown> }) => {
+    (me: {
+      user: {
+        id: number;
+        role: string;
+        email: string | null;
+        phone: string | null;
+        isDemo?: boolean;
+        emailVerified?: boolean;
+        deletionRequestedAt?: string | null;
+      };
+      profile: Record<string, unknown>;
+    }) => {
       setUser({
         id: me.user.id,
         role: me.user.role as Role,
         email: me.user.email,
         phone: me.user.phone,
+        isDemo: me.user.isDemo,
+        emailVerified: me.user.emailVerified,
+        deletionRequestedAt: me.user.deletionRequestedAt ?? null,
       });
       setProfile(me.profile ?? null);
     },
@@ -151,7 +168,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshProfile = useCallback(async () => {
     try {
       const me = await api.auth.me();
-      adoptSession(me as { user: { id: number; role: string; email: string | null; phone: string | null }; profile: Record<string, unknown> });
+      adoptSession(me);
     } catch {
       /* keep current state; 401 path handles expiry */
     }

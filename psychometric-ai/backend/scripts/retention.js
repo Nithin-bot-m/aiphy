@@ -100,7 +100,7 @@ async function runRetentionJob({ dryRun = false } = {}) {
  * Returns a portable JSON object (no scores fabrication — verbatim rows).
  */
 async function exportUserData(userId) {
-  const user = await db.prepare('SELECT id, email, phone, role, is_active, is_demo, created_at, last_login_at FROM users WHERE id = ?').get(userId);
+  const user = await db.prepare('SELECT id, email, phone, role, is_active, is_demo, email_verified, deletion_requested_at, created_at, last_login_at FROM users WHERE id = ?').get(userId);
   if (!user) return null;
 
   const export_ = { exported_at: new Date().toISOString(), user, students: [], parents: [], mappings: [], assessments: [] };
@@ -119,6 +119,13 @@ async function exportUserData(userId) {
         detail.grit_scores = await db.prepare('SELECT * FROM grit_scores WHERE assessment_id = ?').all(a.id);
         detail.stream_scores = await db.prepare('SELECT stream_id, stream_name, fit_score, fit_band, rank_order FROM stream_scores WHERE assessment_id = ?').all(a.id);
         detail.reports = await db.prepare('SELECT report_type, title, status, model, structured_input_hash, generated_at FROM reports WHERE assessment_id = ?').all(a.id);
+        try {
+          detail.v2_responses = await db.prepare('SELECT item_id, respondent_type, selected_option_id, numeric_value, created_at FROM v2_responses WHERE assessment_id = ?').all(a.id);
+          detail.v2_scoring_results = await db.prepare('SELECT summary_json, computed_at FROM v2_scoring_results WHERE assessment_id = ?').all(a.id);
+          detail.v2_counsellor_maps = await db.prepare('SELECT status, map_json, updated_at FROM v2_counsellor_maps WHERE assessment_id = ?').all(a.id);
+        } catch {
+          // V2 tables may be absent in minimal unit fixtures
+        }
         export_.assessments.push(detail);
       }
     }
@@ -131,6 +138,9 @@ async function exportUserData(userId) {
       export_.mappings.push(...await db.prepare('SELECT * FROM student_parent_mapping WHERE parent_id = ?').all(pid));
       export_.assessments.push(...await db.prepare('SELECT * FROM parent_expectations WHERE parent_id = ?').all(pid));
       export_.assessments.push(...await db.prepare('SELECT * FROM parent_perceptions WHERE parent_id = ?').all(pid));
+      try {
+        export_.assessments.push(...await db.prepare('SELECT * FROM v2_parent_sessions WHERE parent_id = ?').all(pid));
+      } catch { /* optional */ }
     }
   }
 
@@ -149,7 +159,9 @@ async function eraseUserData(userId) {
   const suffix = ` (erased ${new Date().toISOString().slice(0, 10)})`;
 
   await db.prepare(`
-    UPDATE users SET email = ?, phone = NULL, otp_code_hash = NULL, otp_expires_at = NULL, updated_at = datetime('now')
+    UPDATE users SET email = ?, phone = NULL, otp_code_hash = NULL, otp_expires_at = NULL,
+      is_active = 0, verification_token_hash = NULL, verification_expires_at = NULL,
+      reset_token_hash = NULL, reset_expires_at = NULL, updated_at = datetime('now')
     WHERE id = ?
   `).run(anonymized, userId);
 

@@ -21,6 +21,9 @@ export interface User {
   email: string | null;
   phone: string | null;
   role: Role;
+  isDemo?: boolean;
+  emailVerified?: boolean;
+  deletionRequestedAt?: string | null;
 }
 
 export interface CandidateProfile {
@@ -321,6 +324,8 @@ export interface ParentChildRow {
   completed_at?: string | null;
   latest_assessment_id: number | null;
   assessment_status: string | null;
+  in_progress_count?: number;
+  latest_attempt_status?: string | null;
   version_code?: string;
   m8_status?: string | null;
 }
@@ -388,6 +393,8 @@ export interface AdminCandidateRow {
   school_name?: string | null;
   board?: string | null;
   student_code?: string;
+  email_verified?: number | boolean;
+  deletion_requested_at?: string | null;
   latest_assessment_id?: number | null;
   latest_completed_assessment_id?: number | null;
   version_code?: string | null;

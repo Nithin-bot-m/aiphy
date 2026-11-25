@@ -414,15 +414,17 @@ export function V2ItemInput({
   const baseTime = item.time_sec || 90;
   const maxSeconds = Math.round(baseTime * (1 + (accommodations?.extended_time_pct ?? 0) / 100));
   const [elapsedSec, setElapsedSec] = useState(0);
-
-  useEffect(() => {
+  const resetKey = `${item.id}:${value?.response_text ?? ""}`;
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (prevResetKey !== resetKey) {
+    setPrevResetKey(resetKey);
     const v = value?.response_json as { most?: string; least?: string } | null;
     setBwState({ most: v?.most, least: v?.least });
     setRankOrder(Array.isArray(value?.response_json) ? value.response_json.map(String) : []);
     setMultiPicks(Array.isArray(value?.response_json) ? value.response_json.map(String) : []);
     setTextDraft(value?.response_text ?? "");
     setElapsedSec(0);
-  }, [item.id, value?.response_text]);
+  }
 
   useEffect(() => {
     if (!isTimedCreative) return;

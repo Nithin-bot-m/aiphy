@@ -69,7 +69,7 @@ async function main() {
   process.env.LLM_PROVIDER = 'gemini';
   process.env.GEMINI_API_KEY = 'test-mock-key';
   process.env.GEMINI_BASE_URL = `http://127.0.0.1:${mockPort}`;
-  process.env.LLM_MODEL = 'gemini-3.8-flash';
+  process.env.LLM_MODEL = 'gemini-2.5-flash';
   process.env.SEED_DEMO_DATA = 'true';
 
   const { runMigrations } = require(path.join(REPO, 'backend/migrations/migrate'));
@@ -131,20 +131,20 @@ async function main() {
     const myCall = receivedPayloads[receivedPayloads.length - 1]; // this report is the last generation (after seed)
     assert.ok(myCall, 'no provider call found for this assessment report');
     assert.strictEqual(myCall.apiKey, 'test-mock-key', 'provider call did not carry the API key header');
-    assert.ok(/\/v1beta\/models\/gemini-3\.8-flash:generateContent$/.test(myCall.url), 'unexpected provider URL: ' + myCall.url);
+    assert.ok(/\/v1beta\/models\/gemini-2\.5-flash:generateContent$/.test(myCall.url), 'unexpected provider URL: ' + myCall.url);
     for (const p of receivedPayloads) {
       assert.ok(!/test-mock-key|JWT_SECRET|password_hash|INSERT INTO|SELECT \*/.test(p.body), 'SECRETS/SQL leaked into provider payload');
     }
 
     const { db } = require(path.join(REPO, 'backend/src/config/db'));
     const rows = await db.prepare("SELECT r.id, r.provider, r.model_name, r.status, resp.status AS resp_status, resp.token_usage_json FROM llm_requests r JOIN llm_responses resp ON resp.request_id = r.id WHERE r.status = 'success'").all();
-    const okRow = rows.find((r) => r.provider === 'gemini' && r.model_name === 'gemini-3.8-flash' && r.resp_status === 'success' && (r.token_usage_json || '').includes('1333'));
+    const okRow = rows.find((r) => r.provider === 'gemini' && r.model_name === 'gemini-2.5-flash' && r.resp_status === 'success' && (r.token_usage_json || '').includes('1333'));
     assert.ok(okRow, 'no llm audit row with provider=gemini / status=success / token usage recorded');
 
     console.log('\n════════════════════════════════════════════');
     console.log('LLM LIVE-PATH E2E: ALL CHECKS PASSED');
     console.log('════════════════════════════════════════════');
-    console.log('  provider call        : gemini (mock endpoint), model gemini-3.8-flash');
+    console.log('  provider call        : gemini (mock endpoint), model gemini-2.5-flash');
     console.log('  narrative marker     : found in stored report');
     console.log('  audit row            : provider=gemini status=success, tokens recorded');
     console.log('  payload boundaries   : no API key / DB secrets / SQL in outbound payload');

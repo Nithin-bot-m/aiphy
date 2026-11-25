@@ -5,7 +5,8 @@
  *  - same-origin fetch through the Next.js bridge (/api/* → psychometric backend)
  *  - unwrap the single response envelope ({success,data} | {success,error})
  *  - map transport/HTTP failures to friendly, non-technical messages
- *  - bearer-token session storage (sessionStorage — per tab, survives reload)
+ *  - bearer-token session storage (sessionStorage — per-tab ephemeral lifecycle,
+ *    survives reload, avoids ambient cookie CSRF across origins; paired with strict CSP)
  *
  * It contains ZERO psychometric logic: no scoring, no bands, no fallback
  * numbers. Values come from the backend or they are null/absent.
@@ -120,12 +121,22 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
 
 export interface LoginPayload {
   token: string;
-  user: { id: number; email: string | null; phone: string | null; role: string };
+  user: {
+    id: number;
+    email: string | null;
+    phone: string | null;
+    role: string;
+    isDemo?: boolean;
+    emailVerified?: boolean;
+    deletionRequestedAt?: string | null;
+  };
   profile?: Record<string, unknown> | null;
 }
 
 export const api = {
   auth: {
+    capabilities: () =>
+      request<{ otpAvailable: boolean; emailDeliveryAvailable: boolean; otpProvider: string | null }>("auth/capabilities", { public: true }),
     login: (identifier: string, password: string) =>
       request<LoginPayload>("auth/login", { method: "POST", body: { identifier, password }, public: true }),
     register: (body: Record<string, unknown>) =>
@@ -134,7 +145,17 @@ export const api = {
       request<{ message: string; expires_in_minutes: number }>("auth/send-otp", { method: "POST", body: { phone }, public: true }),
     verifyOtp: (phone: string, otp: string) =>
       request<LoginPayload>("auth/verify-otp", { method: "POST", body: { phone, otp }, public: true }),
-    me: () => request<{ user: { id: number; email: string | null; phone: string | null; role: string }; profile: Record<string, unknown> }>("auth/me"),
+    sendVerification: () =>
+      request<{ sent?: boolean; alreadyVerified?: boolean; delivered?: boolean; message: string }>("auth/send-verification", { method: "POST" }),
+    verifyEmail: (token: string) =>
+      request<{ verified: boolean; user: LoginPayload["user"] }>("auth/verify-email", { method: "POST", body: { token }, public: true }),
+    forgotPassword: (email: string) =>
+      request<{ sent: boolean; emailDeliveryAvailable?: boolean; message: string }>("auth/forgot-password", { method: "POST", body: { email }, public: true }),
+    resetPassword: (token: string, new_password: string) =>
+      request<{ reset: boolean; message: string }>("auth/reset-password", { method: "POST", body: { token, new_password }, public: true }),
+    requestDeletion: (reason?: string) =>
+      request<{ requested: boolean; deletionRequestedAt: string | null; message: string }>("auth/request-deletion", { method: "POST", body: { confirm: true, reason } }),
+    me: () => request<{ user: LoginPayload["user"]; profile: Record<string, unknown> }>("auth/me"),
     logout: () => request<unknown>("auth/logout", { method: "POST" }),
   },
 
@@ -142,6 +163,7 @@ export const api = {
     profile: () => request<Record<string, unknown>>("candidate/profile"),
     updateProfile: (body: Record<string, unknown>) =>
       request<Record<string, unknown>>("candidate/profile", { method: "PUT", body }),
+    exportData: () => request<Record<string, unknown>>("candidate/export"),
     code: () => request<{ student_code: string }>("candidate/code"),
     /** Latest completed result; 404 (nothing completed yet) resolves to null. */
     results: async () => {
@@ -242,6 +264,14 @@ export const api = {
     userExport: (id: number) => request<Record<string, unknown>>(`admin/users/${id}/export`),
     userErase: (id: number) =>
       request<Record<string, unknown>>(`admin/users/${id}/erase`, { method: "POST", body: {} }),
+    userResetPassword: (id: number, new_password?: string) =>
+      request<{ reset: boolean; user_id: number; temporary_password?: string; message: string }>(
+        `admin/users/${id}/reset-password`,
+        { method: "POST", body: new_password ? { new_password } : {} }
+      ),
+    userVerifyEmail: (id: number) =>
+      request<{ verified: boolean; user_id: number }>(`admin/users/${id}/verify-email`, { method: "POST", body: {} }),
+    health: () => request<Record<string, unknown>>("admin/health"),
   },
 
   v2: {

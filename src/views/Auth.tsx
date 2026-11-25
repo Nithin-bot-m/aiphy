@@ -58,6 +58,12 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
   const [otpCode, setOtpCode] = useState("");
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStatus, setForgotStatus] = useState<string | null>(null);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetModeToken, setResetModeToken] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [otpAvailable, setOtpAvailable] = useState<boolean>(false);
   const [fields, setFields] = useState({
     identifier: "",
     password: "",
@@ -71,6 +77,47 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
     phone: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let active = true;
+    import("@/lib/api").then(({ api }) => {
+      api.auth
+        .capabilities()
+        .then((cap) => {
+          if (active) setOtpAvailable(Boolean(cap.otpAvailable));
+        })
+        .catch(() => {
+          if (active) setOtpAvailable(false);
+        });
+    });
+
+    if (typeof window !== "undefined") {
+      const hashQuery = window.location.hash.split("?")[1] || window.location.search.slice(1);
+      const params = new URLSearchParams(hashQuery);
+      const verifyToken = params.get("verify");
+      const resetToken = params.get("reset");
+      if (verifyToken) {
+        import("@/lib/api").then(({ api }) => {
+          api.auth
+            .verifyEmail(verifyToken)
+            .then(() => {
+              if (active) pushToast("Your email has been verified.", "success");
+            })
+            .catch((err) => {
+              if (active) pushToast(err instanceof Error ? err.message : "Email verification link is invalid or expired.", "bad");
+            });
+        });
+      }
+      if (resetToken) {
+        setResetModeToken(resetToken);
+        setResetMode(true);
+        setForgotOpen(true);
+      }
+    }
+    return () => {
+      active = false;
+    };
+  }, [pushToast]);
 
   useEffect(() => {
     setFormError(null);
@@ -90,9 +137,13 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
   const validateRegister = (): boolean => {
     const e: Record<string, string> = {};
     if (!fields.full_name.trim()) e.full_name = "Please enter the full name.";
+    else if (/[<>]/.test(fields.full_name)) e.full_name = "Full name cannot contain < or > characters.";
+    if (fields.school_name && /[<>]/.test(fields.school_name)) e.school_name = "School name cannot contain < or > characters.";
     if (role === "parent" && !fields.email.trim()) e.email = "Please enter an email address.";
     if (fields.email && !/^\S+@\S+\.\S+$/.test(fields.email)) e.email = "That email doesn't look right.";
     if (!fields.password || fields.password.length < 8) e.password = "Password needs at least 8 characters.";
+    else if (!/[a-zA-Z]/.test(fields.password) || !/[0-9]/.test(fields.password)) e.password = "Password must include letters and numbers.";
+    else if (["password", "password1", "password12", "password123", "qwerty12", "qwerty123", "qwertyui", "12345678", "123456789"].includes(fields.password.trim().toLowerCase())) e.password = "Choose a stronger password without common words or keyboard sequences.";
     if (fields.password !== fields.confirm_password) e.confirm_password = "Passwords do not match.";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -281,36 +332,38 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
 
           {mode === "login" ? (
             <div className="mt-6">
-              <div className="flex border-b border-line-2 mb-5" role="tablist" aria-label="Sign in method">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={loginMethod === "password"}
-                  onClick={() => setLoginMethod("password")}
-                  className={`pb-2.5 px-3 text-[13.5px] font-semibold transition-all border-b-2 cursor-pointer ${
-                    loginMethod === "password"
-                      ? "border-brand text-brand"
-                      : "border-transparent text-ink-3 hover:text-ink"
-                  }`}
-                >
-                  Password
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={loginMethod === "otp"}
-                  onClick={() => setLoginMethod("otp")}
-                  className={`pb-2.5 px-3 text-[13.5px] font-semibold transition-all border-b-2 cursor-pointer ${
-                    loginMethod === "otp"
-                      ? "border-brand text-brand"
-                      : "border-transparent text-ink-3 hover:text-ink"
-                  }`}
-                >
-                  Mobile OTP
-                </button>
-              </div>
+              {otpAvailable && (
+                <div className="flex border-b border-line-2 mb-5" role="tablist" aria-label="Sign in method">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={loginMethod === "password"}
+                    onClick={() => setLoginMethod("password")}
+                    className={`pb-2.5 px-3 text-[13.5px] font-semibold transition-all border-b-2 cursor-pointer ${
+                      loginMethod === "password"
+                        ? "border-brand text-brand"
+                        : "border-transparent text-ink-3 hover:text-ink"
+                    }`}
+                  >
+                    Password
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={loginMethod === "otp"}
+                    onClick={() => setLoginMethod("otp")}
+                    className={`pb-2.5 px-3 text-[13.5px] font-semibold transition-all border-b-2 cursor-pointer ${
+                      loginMethod === "otp"
+                        ? "border-brand text-brand"
+                        : "border-transparent text-ink-3 hover:text-ink"
+                    }`}
+                  >
+                    Mobile OTP
+                  </button>
+                </div>
+              )}
 
-              {loginMethod === "password" ? (
+              {(!otpAvailable || loginMethod === "password") ? (
                 <form onSubmit={doLogin} noValidate>
                   <Field label="Email or phone" htmlFor="identifier" required>
                     <Input
@@ -528,35 +581,135 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
             )}
           </p>
 
-          <Modal open={forgotOpen} onClose={() => setForgotOpen(false)} title="Account Recovery">
+          <Modal
+            open={forgotOpen}
+            onClose={() => {
+              setForgotOpen(false);
+              setForgotStatus(null);
+              setResetMode(false);
+            }}
+            title={resetMode ? "Set a New Password" : "Reset Your Password"}
+          >
             <div className="space-y-4">
-              <p className="text-[13.5px] text-ink-2 leading-relaxed">
-                Forgot your password? You can recover access using either of these options:
-              </p>
-              <Card className="p-4 border-brand/30 bg-brand-mist/40 space-y-2">
-                <p className="font-semibold text-[14px] text-ink">Option 1: Mobile Phone OTP (Instant)</p>
-                <p className="text-[13px] text-ink-2 leading-relaxed">
-                  If your account has a registered phone number, you can log in immediately using a one-time SMS verification code without your password.
-                </p>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setForgotOpen(false);
-                    setLoginMethod("otp");
+              {resetMode ? (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setForgotStatus(null);
+                    setBusy(true);
+                    try {
+                      const { api } = await import("@/lib/api");
+                      const res = await api.auth.resetPassword(resetModeToken.trim(), resetNewPassword);
+                      pushToast(res.message || "Your password has been updated. Please sign in.", "success");
+                      setForgotOpen(false);
+                      setResetMode(false);
+                      setResetModeToken("");
+                      setResetNewPassword("");
+                    } catch (err) {
+                      setForgotStatus(err instanceof Error ? err.message : "Could not reset password.");
+                    } finally {
+                      setBusy(false);
+                    }
                   }}
+                  className="space-y-3"
                 >
-                  Switch to Mobile OTP
-                </Button>
-              </Card>
-              <Card className="p-4 space-y-2">
-                <p className="font-semibold text-[14px] text-ink">Option 2: Institutional / Admin Reset</p>
-                <p className="text-[13px] text-ink-2 leading-relaxed">
-                  If your account was provisioned by your school or institution, contact your school counselor or administrator to reset your credentials.
-                </p>
-                <p className="text-[12.5px] text-ink-3">
-                  Email: support@psychometric-ai.local
-                </p>
-              </Card>
+                  <p className="text-[13px] text-ink-2 leading-relaxed">
+                    Paste your password reset token and choose a strong new password. Any previous failed sign-in lockout is automatically cleared.
+                  </p>
+                  <Field label="Reset token" htmlFor="reset-token">
+                    <Input
+                      id="reset-token"
+                      value={resetModeToken}
+                      onChange={(e) => setResetModeToken(e.target.value)}
+                      placeholder="Paste the token from your reset email"
+                      required
+                    />
+                  </Field>
+                  <Field label="New password" htmlFor="reset-pw" hint="At least 8 characters with letters and numbers (12+ for admins)">
+                    <Input
+                      id="reset-pw"
+                      type="password"
+                      value={resetNewPassword}
+                      onChange={(e) => setResetNewPassword(e.target.value)}
+                      required
+                    />
+                  </Field>
+                  {forgotStatus && (
+                    <p role="alert" className="text-[13px] font-medium text-bad">{forgotStatus}</p>
+                  )}
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="secondary" onClick={() => { setResetMode(false); setForgotStatus(null); }}>
+                      Back
+                    </Button>
+                    <Button type="submit" loading={busy}>
+                      Update password
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <p className="text-[13.5px] text-ink-2 leading-relaxed">
+                    Enter your registered email address to request a password reset token.
+                  </p>
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setForgotStatus(null);
+                      setBusy(true);
+                      try {
+                        const { api } = await import("@/lib/api");
+                        const res = await api.auth.forgotPassword(forgotEmail.trim());
+                        setForgotStatus(res.message);
+                      } catch (err) {
+                        setForgotStatus(err instanceof Error ? err.message : "Could not request password reset.");
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                    className="space-y-3"
+                  >
+                    <Field label="Registered email" htmlFor="forgot-email">
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <Button type="submit" loading={busy} className="w-full">
+                      Send reset instructions
+                    </Button>
+                  </form>
+                  {forgotStatus && (
+                    <p role="status" className="rounded-[10px] border border-brand/30 bg-brand-mist/40 px-3.5 py-2.5 text-[12.5px] text-ink">
+                      {forgotStatus}
+                    </p>
+                  )}
+                  <div className="pt-2 border-t border-line flex flex-wrap items-center justify-between gap-2 text-[12.5px]">
+                    <button
+                      type="button"
+                      onClick={() => { setResetMode(true); setForgotStatus(null); }}
+                      className="font-semibold text-brand hover:underline cursor-pointer"
+                    >
+                      Already have a reset token?
+                    </button>
+                    {otpAvailable && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotOpen(false);
+                          setLoginMethod("otp");
+                        }}
+                        className="font-semibold text-ink-2 hover:text-ink cursor-pointer"
+                      >
+                        Use Mobile OTP instead
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </Modal>
         </div>

@@ -213,18 +213,18 @@ export function PublicHeader() {
   };
   return (
     <header className="sticky top-0 z-40 bg-paper/90 backdrop-blur border-b border-line/70 no-print">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 h-[68px] flex items-center justify-between">
-        <button onClick={() => navigate("/")} className="cursor-pointer" aria-label="Psychometric AI home">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 h-16 sm:h-[68px] flex items-center justify-between gap-2">
+        <button onClick={() => navigate("/")} className="min-h-[44px] inline-flex items-center cursor-pointer shrink-0" aria-label="Psychometric AI home">
           <Wordmark />
         </button>
-        <nav aria-label="Public" className="flex items-center gap-2 sm:gap-5">
+        <nav aria-label="Public" className="flex items-center gap-1.5 sm:gap-5">
           <a
             href="#how"
             onClick={(e) => {
               e.preventDefault();
               scrollLanding("how");
             }}
-            className="hidden sm:inline text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer"
+            className="hidden sm:inline-flex items-center min-h-[44px] text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer whitespace-nowrap"
           >
             How it works
           </a>
@@ -234,14 +234,14 @@ export function PublicHeader() {
               e.preventDefault();
               scrollLanding("trust");
             }}
-            className="hidden sm:inline text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer"
+            className="hidden sm:inline-flex items-center min-h-[44px] text-[13.5px] font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer whitespace-nowrap"
           >
             Principles
           </a>
           {user ? (
             <button
               onClick={() => navigate(user.role === "admin" ? "/admin" : user.role === "parent" ? "/parent" : "/home")}
-              className="h-9.5 px-4 rounded-[10px] bg-ink text-[#F3F1EA] text-[13.5px] font-semibold hover:bg-ink/85 transition-colors cursor-pointer"
+              className="min-h-[44px] px-3.5 sm:px-4 rounded-[10px] bg-ink text-[#F3F1EA] text-[13px] sm:text-[13.5px] font-semibold hover:bg-ink/85 transition-colors cursor-pointer whitespace-nowrap"
             >
               Open dashboard
             </button>
@@ -249,15 +249,16 @@ export function PublicHeader() {
             <>
               <button
                 onClick={() => navigate("/login")}
-                className="h-9.5 px-3.5 rounded-[10px] text-[13.5px] font-semibold text-ink-2 hover:text-ink hover:bg-surface-2 transition-colors cursor-pointer"
+                className="min-h-[44px] px-3 sm:px-3.5 rounded-[10px] text-[13px] sm:text-[13.5px] font-semibold text-ink-2 hover:text-ink hover:bg-surface-2 transition-colors cursor-pointer whitespace-nowrap"
               >
                 Sign in
               </button>
               <button
                 onClick={() => navigate("/register")}
-                className="h-9.5 px-4 rounded-[10px] bg-brand text-on-brand text-[13.5px] font-semibold hover:bg-brand-strong transition-colors cursor-pointer"
+                className="min-h-[44px] px-3.5 sm:px-4 rounded-[10px] bg-brand text-on-brand text-[13px] sm:text-[13.5px] font-semibold hover:bg-brand-strong transition-colors cursor-pointer whitespace-nowrap"
               >
-                Start Assessment
+                <span className="sm:hidden">Start</span>
+                <span className="hidden sm:inline">Start Assessment</span>
               </button>
             </>
           )}

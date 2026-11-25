@@ -176,6 +176,7 @@ export function ParentHome() {
               (data ?? []).map((c) => {
                 const pending = c.link_status !== "linked";
                 const done = c.assessment_status === "completed";
+                const retaking = (c.in_progress_count ?? 0) > 0 && done;
                 return (
                   <Card key={c.mapping_id} className="p-5 sm:p-6">
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -185,6 +186,7 @@ export function ParentHome() {
                           <Badge tone={pending ? "warn" : "ok"} dot>
                             {pending ? "Waiting for approval" : "Linked"}
                           </Badge>
+                          {retaking && <Badge tone="brand" dot>Retake in progress</Badge>}
                           {c.version_code === "V2" && <Badge tone="brand">V2</Badge>}
                         </div>
                         <p className="text-[13px] text-ink-2 mt-1.5">
@@ -200,12 +202,12 @@ export function ParentHome() {
                           {pending
                             ? "You'll see their profile here once they approve the request."
                             : done
-                              ? `Assessment completed${c.completed_at ? ` ${fmtDateTime(c.completed_at)}` : ""} — open the Child tab to see their profile.`
+                              ? `Assessment completed${c.completed_at ? ` ${fmtDateTime(c.completed_at)}` : ""}${retaking ? " (a new retake attempt is currently in progress — completed results remain active until finished)" : ""} — open the Child tab to see their profile.`
                               : "Assessment not completed yet. You'll be able to share your perspective once it's done."}
                         </p>
                       </div>
                       {!pending && done && c.latest_assessment_id != null && (
-                        <Button variant="secondary" onClick={() => (window.location.hash = "/parent/child")}>
+                        <Button variant="secondary" onClick={() => (window.location.hash = `#/parent/child?aid=${c.latest_assessment_id}`)}>
                           View profile
                         </Button>
                       )}
@@ -254,7 +256,11 @@ export function ParentHome() {
 
 export function ParentChild() {
   const { data: children_, error: childrenError, loading: childrenLoading, reload } = useChildren();
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const m = window.location.hash.match(/[?&]aid=(\d+)/);
+    return m ? Number(m[1]) : null;
+  });
 
   const activeAssessment = useMemo(() => {
     const linked = (children_ ?? []).filter((c) => c.link_status === "linked" && c.latest_assessment_id != null);
@@ -411,7 +417,11 @@ export function ParentChild() {
 export function ParentAlignment() {
   const { pushToast } = useApp();
   const { data: children_, loading: childrenLoading } = useChildren();
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const m = window.location.hash.match(/[?&]aid=(\d+)/);
+    return m ? Number(m[1]) : null;
+  });
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({
@@ -662,7 +672,11 @@ export function ParentAlignment() {
 
 export function ParentReports() {
   const { data: children_, loading } = useChildren();
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const m = window.location.hash.match(/[?&]aid=(\d+)/);
+    return m ? Number(m[1]) : null;
+  });
 
   const activeAssessment = useMemo(() => {
     const linked = (children_ ?? []).filter((c) => c.link_status === "linked" && c.latest_assessment_id != null);

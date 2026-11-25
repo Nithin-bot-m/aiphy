@@ -55,10 +55,45 @@ function isLikert1to5(value) {
   return isFiniteNumber(value) && Number.isInteger(value) && value >= 1 && value <= 5;
 }
 
-function assertStrongPassword(password) {
-  assert(typeof password === 'string' && password.length >= 8, badRequest('Password must be at least 8 characters long.'));
+const COMMON_PASSWORDS = new Set([
+  'password', 'password1', 'password12', 'password123', 'passw0rd', 'p@ssw0rd',
+  'qwerty12', 'qwerty123', 'qwertyui', '12345678', '123456789', '1234567890',
+  'abc12345', 'letmein1', 'welcome1', 'admin123', 'admin1234', 'iloveyou1',
+  'changeme1', 'student1', 'student123', 'school123', 'demo1234', '00000000',
+  '11111111', 'asdfgh12', 'zxcvbn12'
+]);
+
+function assertStrongPassword(password, options = {}) {
+  const minLength = Number(options.minLength) || 8;
+  assert(typeof password === 'string' && password.length >= minLength, badRequest(`Password must be at least ${minLength} characters long.`));
   assert(password.length <= 128, badRequest('Password must be at most 128 characters long.'));
   assert(/[a-zA-Z]/.test(password) && /[0-9]/.test(password), badRequest('Password must contain letters and numbers.'));
+  const lower = password.trim().toLowerCase();
+  assert(
+    !COMMON_PASSWORDS.has(lower) && !/(.)\1{4,}/.test(lower),
+    badRequest('Choose a stronger password that does not use common words or repeated characters.')
+  );
+  if (options.email) {
+    const local = String(options.email).trim().toLowerCase().split('@')[0];
+    assert(!(local && local.length >= 4 && lower.includes(local)), badRequest('Password must not contain your email username.'));
+  }
+}
+
+function assertSafePlainText(value, fieldName, options = {}) {
+  if (value === undefined || value === null || value === '') {
+    if (options.required) throw badRequest(`${fieldName} is required.`);
+    return value;
+  }
+  const str = String(value).trim();
+  if (options.required && !str) throw badRequest(`${fieldName} is required.`);
+  const maxLength = Number(options.maxLength) || 150;
+  assert(str.length <= maxLength, badRequest(`${fieldName} must be ${maxLength} characters or fewer.`));
+  const hasControl = [...str].some((ch) => {
+    const code = ch.charCodeAt(0);
+    return code < 32 || code === 127;
+  });
+  assert(!/[<>]/.test(str) && !hasControl, badRequest(`${fieldName} contains unsupported characters (<, >, or control characters).`));
+  return str;
 }
 
 // ---------- Crypto helpers ----------
@@ -87,6 +122,6 @@ module.exports = {
   HttpError, badRequest, unauthorized, forbidden, notFound, conflict,
   asyncHandler, assert,
   cleanString, isValidEmail, isValidPhone, isValidStudentCode,
-  isFiniteNumber, isLikert1to5, assertStrongPassword,
+  isFiniteNumber, isLikert1to5, assertStrongPassword, assertSafePlainText,
   randomCode, sha256Hex, timingSafeEqualStr
 };

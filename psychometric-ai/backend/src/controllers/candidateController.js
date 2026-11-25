@@ -4,7 +4,8 @@ const userRepository = require('../repositories/userRepository');
 const assessmentRepository = require('../repositories/assessmentRepository');
 const assessmentService = require('../services/assessmentService');
 const parentService = require('../services/parentService');
-const { asyncHandler, notFound, badRequest } = require('../utils/helpers');
+const { exportUserData } = require('../../scripts/retention');
+const { asyncHandler, notFound, badRequest, assertSafePlainText } = require('../utils/helpers');
 const { BOARDS } = require('../config/constants');
 const { logAudit } = require('../middleware/auditLogger');
 
@@ -34,9 +35,21 @@ exports.updateProfile = asyncHandler(async (req, res) => {
   if (grade !== undefined && (!Number.isInteger(grade) || grade < 8 || grade > 12)) throw badRequest('Grade must be an integer 8-12.');
   if (dob && !/^\d{4}-\d{2}-\d{2}$/.test(String(dob))) throw badRequest('dob must be YYYY-MM-DD.');
 
-  await userRepository.updateStudentProfile(student.id, { full_name, dob, grade, school_name, board });
+  const safeName = full_name !== undefined ? assertSafePlainText(full_name, 'Full name', { required: true, maxLength: 120 }) : undefined;
+  if (safeName !== undefined && safeName.length < 2) throw badRequest('Full name must be at least 2 characters.');
+  const safeSchool = school_name !== undefined ? assertSafePlainText(school_name, 'School name', { maxLength: 150 }) : undefined;
+
+  await userRepository.updateStudentProfile(student.id, { full_name: safeName, dob, grade, school_name: safeSchool, board });
+  await userRepository.markStudentProfileCompleted(student.id);
   await logAudit(req, 'UPDATE_PROFILE', 'STUDENT', student.id);
   res.json({ student: await userRepository.findStudentById(student.id) });
+});
+
+exports.exportMyData = asyncHandler(async (req, res) => {
+  await requireStudent(req);
+  const data = await exportUserData(req.user.id);
+  await logAudit(req, 'CANDIDATE_EXPORT', 'USER', req.user.id);
+  res.json(data);
 });
 
 exports.getMyStudentCode = asyncHandler(async (req, res) => {

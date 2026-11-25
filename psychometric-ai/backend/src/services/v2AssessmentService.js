@@ -252,6 +252,7 @@ async function completeV2(req, assessment) {
   await transaction(async () => {
     await v2Repository.upsertV2ScoringResult({ assessmentId: assessment.id, result });
     await assessmentRepository.completeAssessmentRow(assessment.id);
+    await userRepository.markStudentProfileCompleted(assessment.student_id);
     // Record per-grade cohort observations ONLY when validity checks did not flag low effort
     if (!result.validity.is_provisional_due_to_validity) {
       for (const dim of ['V', 'N', 'L', 'S', 'P', 'CRE', 'EQ']) {

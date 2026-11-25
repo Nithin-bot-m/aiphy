@@ -211,16 +211,17 @@ async function generateNarrative({ reportType, promptRow, userPrompt, structured
     outcome.status = provider === 'offline' ? 'success' : 'fallback';
   }
 
+  const resolvedModel = provider === 'offline' || outcome.status !== 'success' ? 'offline-template-v1' : model;
   const latencyMs = Date.now() - started;
   auditLlmCall({
     assessmentId, userId, reportType,
     promptVersionId: promptRow.id,
-    provider, model,
+    provider, model: resolvedModel,
     requestPayload,
     outcome: { ...outcome, latencyMs }
   });
 
-  return { text: outcome.text, model: provider === 'offline' ? 'offline-template-v1' : model, provider, status: outcome.status, latencyMs, tokenUsage: outcome.tokenUsage };
+  return { text: outcome.text, model: resolvedModel, provider, status: outcome.status, latencyMs, tokenUsage: outcome.tokenUsage };
 }
 
 module.exports = { generateNarrative, buildOfflineNarrative };

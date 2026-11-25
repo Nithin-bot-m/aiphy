@@ -121,14 +121,14 @@ function ConsoleShell({
               Sign out
             </button>
           </div>
-          <div className="flex gap-1 px-3 pb-2.5 overflow-x-auto no-scrollbar" role="tablist" aria-label="Admin sections">
+          <div className="flex flex-wrap gap-1.5 px-3 pb-3" role="tablist" aria-label="Admin sections">
             {TABS.map((t) => (
               <button
                 key={t.key}
                 role="tab"
                 aria-selected={t.key === tab}
                 onClick={() => setTab(t.key)}
-                className={`shrink-0 h-8 px-3 rounded-full text-[12px] font-semibold transition-colors cursor-pointer ${
+                className={`shrink-0 min-h-[36px] px-3 py-1.5 rounded-full text-[12px] font-semibold transition-colors cursor-pointer whitespace-nowrap ${
                   t.key === tab ? "bg-[#EDEFEA] text-[#14211F]" : "bg-[#1A2B28] text-[#93A5A1]"
                 }`}
               >
@@ -203,7 +203,13 @@ export default function Admin() {
   return (
     <ConsoleShell tab={tab} setTab={setTab}>
       {tab === "dashboard" && <DashboardTab go={setTab} />}
-      {tab === "candidates" && <CandidatesTab onOpenMap={openCounsellorMap} />}
+      {tab === "candidates" && (
+        <CandidatesTab
+          onOpenMap={openCounsellorMap}
+          onOk={(m) => pushToast(m, "success")}
+          onError={(m) => pushToast(m, "bad")}
+        />
+      )}
       {tab === "counsellor" && (
         <CounsellorMapTab
           assessmentId={selectedMapAssessmentId}
@@ -214,7 +220,7 @@ export default function Admin() {
       {tab === "assessments" && <AssessmentsTab onError={(m) => pushToast(m, "bad")} onOk={(m) => pushToast(m, "success")} />}
       {tab === "questions" && <QuestionsTab onError={(m) => pushToast(m, "bad")} onOk={(m) => pushToast(m, "success")} />}
       {tab === "scoring" && <ScoringTab onError={(m) => pushToast(m, "bad")} onOk={(m) => pushToast(m, "success")} />}
-      {tab === "llm" && <LlmTab onOk={(m) => pushToast(m, "success")} />}
+      {tab === "llm" && <LlmTab onOk={(m) => pushToast(m, "success")} onError={(m) => pushToast(m, "bad")} />}
       {tab === "reports" && <ReportsTab />}
       {tab === "audit" && <AuditTab />}
     </ConsoleShell>
@@ -316,61 +322,160 @@ function DashboardTab({ go }: { go: (t: TabKey) => void }) {
 
 /* ---------------- candidates ---------------- */
 
-function CandidatesTab({ onOpenMap }: { onOpenMap: (assessmentId: number) => void }) {
+function CandidatesTab({
+  onOpenMap,
+  onOk,
+  onError,
+}: {
+  onOpenMap: (assessmentId: number) => void;
+  onOk: (m: string) => void;
+  onError: (m: string) => void;
+}) {
   const [q, setQ] = useState("");
+  const [busyUserId, setBusyUserId] = useState<number | null>(null);
+  const [tempResetNotice, setTempResetNotice] = useState<{ name: string; password: string } | null>(null);
   const res = useAsyncData(async () => (await api.admin.candidates()) as unknown as { candidates?: AdminCandidateRow[] }, []);
   const rows = (res.data?.candidates ?? []) as AdminCandidateRow[];
   const filtered = rows.filter((r) =>
     [r.full_name, r.student_code, r.email].some((v) => (v || "").toLowerCase().includes(q.toLowerCase()))
   );
+
+  const verifyEmail = async (r: AdminCandidateRow) => {
+    if (!r.user_id) return;
+    setBusyUserId(r.user_id);
+    try {
+      await api.admin.userVerifyEmail(r.user_id);
+      onOk(`Verified email for ${r.full_name}.`);
+      res.reload();
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Could not verify email.");
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
+  const resetPassword = async (r: AdminCandidateRow) => {
+    if (!r.user_id) return;
+    if (!window.confirm(`Generate a new temporary password and unlock sign-in for ${r.full_name}?`)) return;
+    setBusyUserId(r.user_id);
+    try {
+      const out = await api.admin.userResetPassword(r.user_id);
+      if (out.temporary_password) {
+        setTempResetNotice({ name: r.full_name, password: out.temporary_password });
+      }
+      onOk(`Temporary password created for ${r.full_name}.`);
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Could not reset password.");
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
+  const eraseCandidate = async (r: AdminCandidateRow) => {
+    if (!r.user_id) return;
+    if (!window.confirm(`Erase identity PII for ${r.full_name} (user #${r.user_id})? Assessment analytics are preserved.`)) return;
+    setBusyUserId(r.user_id);
+    try {
+      await api.admin.userErase(r.user_id);
+      onOk(`Identity erased for user #${r.user_id} (DPDP §12).`);
+      res.reload();
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Erasure rejected.");
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
   return (
     <div>
       <AdminTitle
         title="Candidates"
-        sub="Roster with each candidate's latest assessment outcome."
+        sub="Roster with psychometric outcomes, email verification state, and DPDP lifecycle controls."
         action={
           <Input
             aria-label="Search candidates"
-            placeholder="Search name or code…"
+            placeholder="Search name, email, or code…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="w-56"
+            className="w-60"
           />
         }
       />
+      {tempResetNotice && (
+        <Card role="status" className="mb-4 p-4 border-brand/40 bg-brand-mist/40 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[13px] text-ink">
+            Temporary password for <span className="font-semibold">{tempResetNotice.name}</span>:{" "}
+            <code className="font-mono font-bold px-2 py-0.5 rounded bg-surface border border-line">{tempResetNotice.password}</code>
+            <span className="ml-2 text-ink-2">Share out-of-band; login lockouts were cleared.</span>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => setTempResetNotice(null)}>Dismiss</Button>
+        </Card>
+      )}
       {res.loading ? (
         <Skeleton className="h-64 rounded-card" />
       ) : res.error ? (
         <ErrorState message={res.error.message} onRetry={res.reload} />
       ) : (
-        <TableShell head={["Candidate", "Code", "Grade", "Version", "Holland", "Top fit", "Console"]} emptyText="No candidates registered yet.">
+        <TableShell head={["Candidate", "Code", "Version", "Holland", "Overall", "Top fit", "Actions"]} emptyText="No candidates registered yet.">
           {filtered.map((r, i) => {
             const aid = r.latest_completed_assessment_id ?? r.latest_assessment_id ?? null;
             const isV2 = r.version_code === "V2";
-            const holland = r.v2_riasec_code ?? r.holland_code ?? "—";
+            const holland = r.holland_code ?? r.v2_riasec_code ?? "—";
+            const overall = r.overall_index != null ? `${r.overall_index}%` : "—";
+            const erased = String(r.email || "").endsWith("@anonymized.invalid");
+            const busy = busyUserId != null && busyUserId === r.user_id;
             return (
               <tr key={r.id ?? r.student_id ?? r.user_id ?? i} className="bg-surface hover:bg-paper/60">
-                <td className="px-4 py-3 font-semibold">
-                  {r.full_name}
-                  {r.is_demo ? <Badge tone="neutral" className="ml-2">Demo</Badge> : null}
+                <td className="px-4 py-3">
+                  <div className="font-semibold flex flex-wrap items-center gap-1.5">
+                    <span>{r.full_name}</span>
+                    {r.is_demo ? <Badge tone="neutral">Demo</Badge> : null}
+                    {r.deletion_requested_at && !erased ? <Badge tone="bad">Deletion requested</Badge> : null}
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11.5px] text-ink-3">
+                    <span>{r.email ?? r.phone ?? `User #${r.user_id ?? "—"}`}</span>
+                    {!erased && (
+                      <Badge tone={r.email_verified ? "ok" : "warn"}>
+                        {r.email_verified ? "Verified" : "Unverified"}
+                      </Badge>
+                    )}
+                  </div>
                 </td>
-                <td className="px-4 py-3 tnum text-ink-2">{r.student_code ?? "—"}</td>
-                <td className="px-4 py-3 tnum">{r.grade ?? "—"}</td>
+                <td className="px-4 py-3 tnum text-ink-2">
+                  <div>{r.student_code ?? "—"}</div>
+                  <div className="text-[11px] text-ink-3">Gr {r.grade ?? "—"}</div>
+                </td>
                 <td className="px-4 py-3">
                   <Badge tone={isV2 ? "brand" : "neutral"}>
                     {r.version_code || (aid ? "V1" : "Not started")}
                   </Badge>
                 </td>
                 <td className="px-4 py-3 tnum font-semibold">{holland}</td>
-                <td className="px-4 py-3 text-ink-2 truncate max-w-[180px]">{r.top_stream ?? "—"}</td>
+                <td className="px-4 py-3 tnum font-semibold">{overall}</td>
+                <td className="px-4 py-3 text-ink-2 truncate max-w-[160px]">{r.top_stream ?? "—"}</td>
                 <td className="px-4 py-3">
-                  {isV2 && aid != null ? (
-                    <Button size="sm" variant="secondary" onClick={() => onOpenMap(aid)}>
-                      Open Map
-                    </Button>
-                  ) : (
-                    <span className="text-[12px] text-ink-3">—</span>
-                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {isV2 && aid != null && (
+                      <Button size="sm" variant="secondary" onClick={() => onOpenMap(aid)}>
+                        Open Map
+                      </Button>
+                    )}
+                    {r.user_id && !r.is_demo && !erased && (
+                      <>
+                        {!r.email_verified && (
+                          <Button size="sm" variant="secondary" loading={busy} onClick={() => verifyEmail(r)}>
+                            Verify
+                          </Button>
+                        )}
+                        <Button size="sm" variant="secondary" loading={busy} onClick={() => resetPassword(r)}>
+                          Reset pwd
+                        </Button>
+                        <Button size="sm" variant="ghost" loading={busy} onClick={() => eraseCandidate(r)}>
+                          Erase
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             );
@@ -473,15 +578,19 @@ function FairnessAuditTab() {
 function AssessmentsTab({ onError, onOk }: { onError: (m: string) => void; onOk: (m: string) => void }) {
   const res = useAsyncData(async () => (await api.admin.dashboard()) as unknown as AdminDashboard, []);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [inlineError, setInlineError] = useState<string | null>(null);
 
   const toggle = async (v: { id: number; version_code: string; is_active?: number | boolean }) => {
+    setInlineError(null);
     setTogglingId(v.id);
     try {
       await api.admin.toggleVersion(v.id, !v.is_active);
       onOk(`${v.version_code} is now ${!v.is_active ? "active" : "inactive"}.`);
       res.reload();
     } catch (e) {
-      onError(e instanceof Error ? e.message : "Could not change version status.");
+      const msg = e instanceof Error ? e.message : "Could not change version status.";
+      setInlineError(msg);
+      onError(msg);
     } finally {
       setTogglingId(null);
     }
@@ -493,6 +602,11 @@ function AssessmentsTab({ onError, onOk }: { onError: (m: string) => void; onOk:
         title="Assessment versions"
         sub="Question banks are versioned — activate or pause V2 rollout at any time without affecting completed V1 records."
       />
+      {inlineError && (
+        <Card role="alert" className="mb-4 p-3.5 border-bad/40 bg-bad-soft/40 text-[13px] font-medium text-bad">
+          {inlineError}
+        </Card>
+      )}
       {res.loading ? (
         <Skeleton className="h-48 rounded-card" />
       ) : res.error ? (
@@ -789,6 +903,7 @@ function ScoringTab({ onError, onOk }: { onError: (m: string) => void; onOk: (m:
   const res = useAsyncData(async () => (await api.admin.scoringRules()) as unknown as { rules?: StreamRuleRow[] }, []);
   const [drafts, setDrafts] = useState<Record<string, Record<string, string>>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [inlineError, setInlineError] = useState<string | null>(null);
 
   // The backend ships weights inside weight_config_json (a JSON string).
   // Parse defensively — every displayed weight remains the stored value.
@@ -816,6 +931,7 @@ function ScoringTab({ onError, onOk }: { onError: (m: string) => void; onOk: (m:
     Object.values(d).reduce((a, v) => a + (Number.isFinite(Number(v)) ? Number(v) : 0), 0);
 
   const save = async (r: StreamRuleRow) => {
+    setInlineError(null);
     const draft = draftFor(r);
     setBusyId(r.stream_id);
     try {
@@ -823,7 +939,9 @@ function ScoringTab({ onError, onOk }: { onError: (m: string) => void; onOk: (m:
       onOk(`${r.stream_name} weights saved.`);
       res.reload();
     } catch (e) {
-      onError(e instanceof Error ? e.message : "Save rejected by the backend.");
+      const msg = e instanceof Error ? e.message : "Save rejected by the backend.";
+      setInlineError(`${r.stream_name}: ${msg}`);
+      onError(msg);
     } finally {
       setBusyId(null);
     }
@@ -835,6 +953,11 @@ function ScoringTab({ onError, onOk }: { onError: (m: string) => void; onOk: (m:
         title="Stream scoring rules"
         sub="Versioned weight profiles per stream. The fit index is the weighted sum of dimension values — weights must sum to 1.00."
       />
+      {inlineError && (
+        <Card role="alert" className="mb-4 p-3.5 border-bad/40 bg-bad-soft/40 text-[13px] font-medium text-bad">
+          {inlineError}
+        </Card>
+      )}
       {res.loading ? (
         <Skeleton className="h-72 rounded-card" />
       ) : res.error ? (
@@ -969,7 +1092,7 @@ function UsageAndQuota() {
 
 /* ---------------- Data governance (retention, DPDP) ---------------- */
 
-function GovernancePanel({ onOk }: { onOk: (m: string) => void }) {
+function GovernancePanel({ onOk, onError }: { onOk: (m: string) => void; onError: (m: string) => void }) {
   const [userId, setUserId] = useState("");
   const [busy, setBusy] = useState(false);
   const [lastExport, setLastExport] = useState<string | null>(null);
@@ -981,7 +1104,7 @@ function GovernancePanel({ onOk }: { onOk: (m: string) => void }) {
       const deleted = Object.entries(r.deleted ?? {}).map(([k, v]) => `${k}: ${v}`).join(", ") || "nothing to delete";
       onOk(dryRun ? `Dry run — would delete → ${deleted}` : `Retention applied → ${deleted}`);
     } catch (e) {
-      onOk(e instanceof Error ? e.message : "Retention run failed.");
+      onError(e instanceof Error ? e.message : "Retention run failed.");
     } finally {
       setBusy(false);
     }
@@ -989,14 +1112,14 @@ function GovernancePanel({ onOk }: { onOk: (m: string) => void }) {
 
   const exportUser = async () => {
     const id = Number(userId);
-    if (!Number.isInteger(id) || id <= 0) return onOk("Enter a numeric user id first.");
+    if (!Number.isInteger(id) || id <= 0) return onError("Enter a numeric user id first.");
     setBusy(true);
     try {
       const data = (await api.admin.userExport(id)) as Record<string, unknown>;
       setLastExport(JSON.stringify(data, null, 2));
       onOk(`Subject export for user ${id} generated below (DPDP §11).`);
     } catch (e) {
-      onOk(e instanceof Error ? e.message : "Export failed.");
+      onError(e instanceof Error ? e.message : "Export failed.");
     } finally {
       setBusy(false);
     }
@@ -1004,7 +1127,7 @@ function GovernancePanel({ onOk }: { onOk: (m: string) => void }) {
 
   const eraseUser = async () => {
     const id = Number(userId);
-    if (!Number.isInteger(id) || id <= 0) return onOk("Enter a numeric user id first.");
+    if (!Number.isInteger(id) || id <= 0) return onError("Enter a numeric user id first.");
     if (!window.confirm(`Erase identity data for user ${id}? This anonymizes the account (irreversible) while preserving assessment records.`)) return;
     setBusy(true);
     try {
@@ -1012,7 +1135,7 @@ function GovernancePanel({ onOk }: { onOk: (m: string) => void }) {
       onOk(`User ${id} anonymized → ${r.anonymized_email ?? "done"} (DPDP §12).`);
       setLastExport(null);
     } catch (e) {
-      onOk(e instanceof Error ? e.message : "Erasure rejected.");
+      onError(e instanceof Error ? e.message : "Erasure rejected.");
     } finally {
       setBusy(false);
     }
@@ -1051,16 +1174,21 @@ function GovernancePanel({ onOk }: { onOk: (m: string) => void }) {
 
 /* ---------------- LLM & prompts ---------------- */
 
-function LlmTab({ onOk }: { onOk: (m: string) => void }) {
+function LlmTab({ onOk, onError }: { onOk: (m: string) => void; onError: (m: string) => void }) {
   const res = useAsyncData(async () => (await api.admin.prompts()) as unknown as { prompts?: PromptRow[] }, []);
+  const healthRes = useAsyncData(async () => {
+    try { return (await api.admin.health()) as Record<string, unknown>; } catch { return null; }
+  }, []);
   const [detail, setDetail] = useState<PromptRow | null>(null);
   const [systemPrompt, setSystemPrompt] = useState("");
   const [userTemplate, setUserTemplate] = useState("");
+  const [promptError, setPromptError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const prompts: PromptRow[] = res.data?.prompts ?? (Array.isArray(res.data) ? (res.data as unknown as PromptRow[]) : []);
 
   const openDetail = async (p: PromptRow) => {
     setDetail(p);
+    setPromptError(null);
     setSystemPrompt("");
     setUserTemplate(p.user_template ?? p.template ?? "");
     try {
@@ -1077,6 +1205,7 @@ function LlmTab({ onOk }: { onOk: (m: string) => void }) {
 
   const savePrompt = async () => {
     if (!detail) return;
+    setPromptError(null);
     setBusy(true);
     try {
       await api.admin.updatePrompt(detail.id, { user_template: userTemplate });
@@ -1084,11 +1213,20 @@ function LlmTab({ onOk }: { onOk: (m: string) => void }) {
       setDetail(null);
       res.reload();
     } catch (e) {
-      onOk(e instanceof Error ? e.message : "Prompt update rejected.");
+      const msg = e instanceof Error ? e.message : "Prompt update rejected.";
+      setPromptError(msg);
+      onError(msg);
     } finally {
       setBusy(false);
     }
   };
+
+  const h = healthRes.data as {
+    database?: { ok?: boolean; driver?: string };
+    llm?: { provider?: string; model?: string; gemini_configured?: boolean };
+    otp?: { provider?: string; sms_ready?: boolean; email_ready?: boolean };
+    uptime_s?: number;
+  } | null;
 
   return (
     <div>
@@ -1106,16 +1244,23 @@ function LlmTab({ onOk }: { onOk: (m: string) => void }) {
             </p>
           </div>
           <div>
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#8FB5AF]">Generation status</p>
-            <p className="text-[13px] mt-1 text-[#C9D4D1]">
-              Reports record their model on every generation — see the Reports tab.
-            </p>
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#8FB5AF]">Service diagnostics</p>
+            {h ? (
+              <p className="text-[12.5px] mt-1 text-[#C9D4D1] tnum">
+                DB: {h.database?.driver ?? "—"} ({h.database?.ok ? "ok" : "err"}) · LLM: {h.llm?.provider}/{h.llm?.model} ·
+                Email: {h.otp?.email_ready ? "ready" : "console"} · SMS: {h.otp?.sms_ready ? "ready" : "off"}
+              </p>
+            ) : (
+              <p className="text-[13px] mt-1 text-[#C9D4D1]">
+                Reports record their model on every generation — see the Reports tab.
+              </p>
+            )}
           </div>
         </div>
       </Card>
 
       <UsageAndQuota />
-      <GovernancePanel onOk={onOk} />
+      <GovernancePanel onOk={onOk} onError={onError} />
 
       {res.loading ? (
         <Skeleton className="h-56 rounded-card" />
@@ -1172,6 +1317,7 @@ function LlmTab({ onOk }: { onOk: (m: string) => void }) {
           onChange={(e) => setUserTemplate(e.target.value)}
           className="font-mono text-[12.5px] min-h-[280px]"
         />
+        {promptError && <p role="alert" className="mt-3 text-[13px] font-medium text-bad">{promptError}</p>}
       </Modal>
     </div>
   );
@@ -1182,10 +1328,12 @@ function LlmTab({ onOk }: { onOk: (m: string) => void }) {
 function ReportsTab() {
   const [assessmentId, setAssessmentId] = useState<string>("");
   const res = useAsyncData(async () => (await api.admin.candidates()) as unknown as { candidates?: AdminCandidateRow[] }, []);
-  const completed = (res.data?.candidates ?? []).filter((c) => c.latest_assessment_id != null);
+  const completed = (res.data?.candidates ?? []).filter(
+    (c) => (c.latest_completed_assessment_id ?? c.latest_assessment_id) != null
+  );
   const versions = useAsyncData(async () => {
     if (!assessmentId) return null;
-    return (await api.admin.auditLogs({ limit: 1 })) && (await api.reports.versions(Number(assessmentId))) as unknown as { versions?: Array<{ id: number; report_type?: string; model?: string; created_at?: string; generated_at?: string; prompt_version?: string; input_hash?: string }> };
+    return (await api.reports.versions(Number(assessmentId))) as unknown as { versions?: Array<{ id: number; report_type?: string; model?: string; created_at?: string; generated_at?: string; prompt_version?: string; input_hash?: string }> };
   }, [assessmentId]);
   const list = (versions.data as { versions?: Array<Record<string, unknown>> } | null)?.versions ?? [];
 
@@ -1199,11 +1347,14 @@ function ReportsTab() {
           <Field label="Assessment" htmlFor="rep-assessment">
             <Select id="rep-assessment" value={assessmentId} onChange={(e) => setAssessmentId(e.target.value)}>
               <option value="">Choose a completed assessment…</option>
-              {completed.map((c) => (
-                <option key={c.latest_assessment_id} value={String(c.latest_assessment_id)}>
-                  {c.full_name} · assessment #{c.latest_assessment_id} · {c.student_code}
-                </option>
-              ))}
+              {completed.map((c) => {
+                const aid = c.latest_completed_assessment_id ?? c.latest_assessment_id;
+                return (
+                  <option key={String(aid)} value={String(aid)}>
+                    {c.full_name} · assessment #{aid} · {c.student_code}
+                  </option>
+                );
+              })}
             </Select>
           </Field>
         </Card>
@@ -1318,7 +1469,7 @@ function AuditTab() {
             </Field>
           </div>
           {action && (
-            <Button size="sm" variant="ghost" onClick={() => setAction("")} className="mb-[22px]">
+            <Button size="sm" variant="ghost" onClick={() => { setAction(""); setPage(0); }} className="mb-[22px]">
               Clear
             </Button>
           )}

@@ -117,6 +117,7 @@ async function complete(req, assessment) {
 
   const scored = await scoreAssessment(assessment);
   await assessmentRepository.completeAssessmentRow(assessment.id);
+  await userRepository.markStudentProfileCompleted(assessment.student_id);
   await logAudit(req, 'COMPLETE_ASSESSMENT', 'ASSESSMENT', assessment.id, { version: scored.version.version_code });
 
   const student = await userRepository.findStudentById(assessment.student_id);

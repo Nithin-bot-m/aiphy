@@ -55,8 +55,11 @@ async function forward(req: NextRequest, segments: string[]) {
     if (!HOP_BY_HOP.has(key.toLowerCase())) headers.set(key, value);
   });
 
-  // Ensure client IP is forwarded so backend rate-limiters don't collapse to 127.0.0.1
-  const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
+  // Ensure real client IP is forwarded (prefer verified cf-connecting-ip over x-forwarded-for)
+  const cfIp = req.headers.get("cf-connecting-ip");
+  const fwdIp = req.headers.get("x-forwarded-for");
+  const realIp = req.headers.get("x-real-ip");
+  const clientIp = cfIp || (fwdIp ? fwdIp.split(",")[0].trim() : null) || realIp;
   if (clientIp) {
     headers.set("x-forwarded-for", clientIp);
   }

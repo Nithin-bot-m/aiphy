@@ -304,7 +304,7 @@ export function CandidateHome({ navigate }: { navigate: (to: string) => void }) 
    ============================================================ */
 
 export function ProfileScreen() {
-  const { pushToast, refreshProfile } = useApp();
+  const { user, pushToast, refreshProfile } = useApp();
   const res = useAsyncData(async () => {
     const raw = (await api.candidate.profile()) as Record<string, unknown>;
     return {
@@ -485,25 +485,92 @@ export function ProfileScreen() {
 
           {/* -------- DPDP §11/§12 self-service -------- */}
           <Card className="p-6">
-            <p className="font-semibold text-[15px] mb-1">Account & Data Management</p>
-            <p className="text-[13px] text-ink-2 mb-4 leading-relaxed">
-              In accordance with the Digital Personal Data Protection (DPDP) Act 2023, you can export your data or request account removal at any time.
-            </p>
-            <div className="flex flex-wrap gap-2.5">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+              <div>
+                <p className="font-semibold text-[15px]">Account & Data Management</p>
+                <p className="text-[13px] text-ink-2 mt-1 leading-relaxed">
+                  Under the Digital Personal Data Protection (DPDP) Act 2023, you can export your full record (profile, responses, psychometric scores, and reports) or request account deletion at any time.
+                </p>
+              </div>
+              {user?.email && (
+                <Badge tone={user.emailVerified ? "ok" : "warn"} dot>
+                  {user.emailVerified ? "Email verified" : "Email unverified"}
+                </Badge>
+              )}
+            </div>
+            {user?.email && !user.emailVerified && (
+              <div className="mb-4 rounded-[10px] border border-[#EBDDBB] bg-warn-soft/50 p-3.5 flex flex-wrap items-center justify-between gap-2.5">
+                <p className="text-[12.5px] text-ink-2">
+                  Verify <span className="font-semibold text-ink">{user.email}</span> to enable self-service account recovery.
+                </p>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={async () => {
+                    try {
+                      const out = await api.auth.sendVerification();
+                      pushToast(out.message, out.delivered ? "success" : "info");
+                    } catch (e) {
+                      pushToast(e instanceof Error ? e.message : "Couldn't send verification email.", "bad");
+                    }
+                  }}
+                >
+                  Send verification email
+                </Button>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2.5">
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => {
-                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(p, null, 2));
-                  const dlAnchor = document.createElement("a");
-                  dlAnchor.setAttribute("href", dataStr);
-                  dlAnchor.setAttribute("download", `psychometric_profile_${p?.student_code || "export"}.json`);
-                  dlAnchor.click();
-                  pushToast("Profile data exported successfully.", "success");
+                onClick={async () => {
+                  try {
+                    const data = await api.candidate.exportData();
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+                    const url = URL.createObjectURL(blob);
+                    const dlAnchor = document.createElement("a");
+                    dlAnchor.href = url;
+                    dlAnchor.download = `psychometric_dpdp_export_${p?.student_code || "record"}.json`;
+                    document.body.appendChild(dlAnchor);
+                    dlAnchor.click();
+                    dlAnchor.remove();
+                    URL.revokeObjectURL(url);
+                    pushToast("Complete DPDP record exported as JSON.", "success");
+                  } catch (e) {
+                    pushToast(e instanceof Error ? e.message : "Could not export record.", "bad");
+                  }
                 }}
               >
                 Export My Data (JSON)
               </Button>
+              {user?.deletionRequestedAt ? (
+                <Badge tone="bad">
+                  Deletion requested · {new Date(user.deletionRequestedAt).toLocaleDateString()}
+                </Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    if (
+                      !window.confirm(
+                        "Request DPDP account deletion? Your identity (name, email, phone, school) will be anonymized by an administrator once processed. This cannot be undone."
+                      )
+                    ) {
+                      return;
+                    }
+                    try {
+                      const out = await api.auth.requestDeletion("User requested erasure from profile");
+                      pushToast(out.message, "info");
+                      await refreshProfile();
+                    } catch (e) {
+                      pushToast(e instanceof Error ? e.message : "Could not record deletion request.", "bad");
+                    }
+                  }}
+                >
+                  Request account deletion
+                </Button>
+              )}
             </div>
           </Card>
 

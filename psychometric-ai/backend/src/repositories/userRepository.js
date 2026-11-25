@@ -161,6 +161,8 @@ async function listChildrenForParent(parentId) {
              (SELECT av.version_code FROM assessments a JOIN assessment_versions av ON a.version_id = av.id WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1),
              (SELECT av.version_code FROM assessments a JOIN assessment_versions av ON a.version_id = av.id WHERE a.student_id = s.id ORDER BY a.id DESC LIMIT 1)
            ) AS version_code,
+           (SELECT COUNT(*) FROM assessments a WHERE a.student_id = s.id AND a.status = 'in_progress') AS in_progress_count,
+           (SELECT a.status FROM assessments a WHERE a.student_id = s.id ORDER BY a.id DESC LIMIT 1) AS latest_attempt_status,
            (SELECT ps.status FROM v2_parent_sessions ps
             WHERE ps.assessment_id = COALESCE(
               (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1),
@@ -175,7 +177,7 @@ async function listChildrenForParent(parentId) {
 
 async function listPendingRequestsForStudent(studentId) {
   return await db.prepare(`
-    SELECT m.id AS mapping_id, m.requested_by, m.created_at, p.full_name AS parent_name, p.relationship
+    SELECT m.id AS mapping_id, m.requested_by, m.created_at, m.created_at AS requested_at, p.full_name AS parent_name, p.relationship
     FROM student_parent_mapping m
     JOIN parents p ON m.parent_id = p.id
     WHERE m.student_id = ? AND m.status = 'pending_student_approval'
@@ -193,9 +195,68 @@ async function listMappingsForStudent(studentId) {
   `).all(studentId);
 }
 
+async function recordFailedLogin(userId, failedAttempts, lockedUntil) {
+  await db.prepare(
+    'UPDATE users SET failed_login_attempts = ?, login_locked_until = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).run(failedAttempts, lockedUntil || null, userId);
+}
+
+async function clearLoginFailures(userId) {
+  await db.prepare(
+    'UPDATE users SET failed_login_attempts = 0, login_locked_until = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).run(userId);
+}
+
+async function setEmailVerificationToken(userId, tokenHash, expiresAt) {
+  await db.prepare(
+    'UPDATE users SET verification_token_hash = ?, verification_expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).run(tokenHash, expiresAt, userId);
+}
+
+async function findUserByVerificationTokenHash(tokenHash) {
+  return await db.prepare('SELECT * FROM users WHERE verification_token_hash = ?').get(tokenHash);
+}
+
+async function markEmailVerified(userId) {
+  await db.prepare(
+    'UPDATE users SET email_verified = 1, verification_token_hash = NULL, verification_expires_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).run(userId);
+}
+
+async function setPasswordResetToken(userId, tokenHash, expiresAt) {
+  await db.prepare(
+    'UPDATE users SET reset_token_hash = ?, reset_expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).run(tokenHash, expiresAt, userId);
+}
+
+async function findUserByResetTokenHash(tokenHash) {
+  return await db.prepare('SELECT * FROM users WHERE reset_token_hash = ?').get(tokenHash);
+}
+
+async function updateUserPasswordAndUnlock(userId, passwordHash) {
+  await db.prepare(
+    'UPDATE users SET password_hash = ?, failed_login_attempts = 0, login_locked_until = NULL, reset_token_hash = NULL, reset_expires_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).run(passwordHash, userId);
+}
+
+async function requestDeletion(userId) {
+  await db.prepare(
+    'UPDATE users SET deletion_requested_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).run(userId);
+}
+
+async function markStudentProfileCompleted(studentId) {
+  await db.prepare(
+    'UPDATE students SET profile_completed = 1 WHERE id = ?'
+  ).run(studentId);
+}
+
 module.exports = {
   findUserById, findUserByIdentifier, findUserByEmail, findUserByPhone,
   createUser, touchLogin, setOtp, getOtpState, registerOtpFailure, clearOtp,
+  recordFailedLogin, clearLoginFailures, setEmailVerificationToken, findUserByVerificationTokenHash,
+  markEmailVerified, setPasswordResetToken, findUserByResetTokenHash, updateUserPasswordAndUnlock,
+  requestDeletion, markStudentProfileCompleted,
   findStudentByUserId, findStudentById, findStudentByCode, createStudent, updateStudentProfile,
   findParentByUserId, createParent,
   findMapping, findMappingById, createMapping, approveMapping, revokeMapping,
