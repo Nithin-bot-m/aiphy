@@ -156,7 +156,16 @@ async function listChildrenForParent(parentId) {
              (SELECT a.status FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1),
              (SELECT a.status FROM assessments a WHERE a.student_id = s.id ORDER BY a.id DESC LIMIT 1)
            ) AS assessment_status,
-           (SELECT a.completed_at FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1) AS completed_at
+           (SELECT a.completed_at FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1) AS completed_at,
+           COALESCE(
+             (SELECT av.version_code FROM assessments a JOIN assessment_versions av ON a.version_id = av.id WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1),
+             (SELECT av.version_code FROM assessments a JOIN assessment_versions av ON a.version_id = av.id WHERE a.student_id = s.id ORDER BY a.id DESC LIMIT 1)
+           ) AS version_code,
+           (SELECT ps.status FROM v2_parent_sessions ps
+            WHERE ps.assessment_id = COALESCE(
+              (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1),
+              (SELECT a.id FROM assessments a WHERE a.student_id = s.id ORDER BY a.id DESC LIMIT 1)
+            ) AND ps.parent_id = m.parent_id) AS m8_status
     FROM student_parent_mapping m
     JOIN students s ON m.student_id = s.id
     WHERE m.parent_id = ?

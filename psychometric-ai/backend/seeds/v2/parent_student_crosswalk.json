@@ -1,0 +1,925 @@
+{
+ "version": 1,
+ "purpose": "Maps every parent item group to the student item group it is compared with.",
+ "constructs": [
+  {
+   "id": "O",
+   "label": "Openness",
+   "group": "Personality",
+   "student": {
+    "module": 3,
+    "scale": "O"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_B5",
+    "scale": "O"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "C",
+   "label": "Conscientiousness",
+   "group": "Personality",
+   "student": {
+    "module": 3,
+    "scale": "C"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_B5",
+    "scale": "C"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "E",
+   "label": "Extraversion",
+   "group": "Personality",
+   "student": {
+    "module": 3,
+    "scale": "E"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_B5",
+    "scale": "E"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "A",
+   "label": "Agreeableness",
+   "group": "Personality",
+   "student": {
+    "module": 3,
+    "scale": "A"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_B5",
+    "scale": "A"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "N",
+   "label": "Emotional stability",
+   "group": "Personality",
+   "student": {
+    "module": 3,
+    "scale": "N"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_B5",
+    "scale": "N"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "ANALYTIC",
+   "label": "Analytical",
+   "group": "Thinking style",
+   "student": {
+    "module": 3,
+    "scale": "ANALYTIC"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_THINK",
+    "scale": "ANALYTIC"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "CREATIVE",
+   "label": "Creative",
+   "group": "Thinking style",
+   "student": {
+    "module": 3,
+    "scale": "CREATIVE"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_THINK",
+    "scale": "CREATIVE"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "PRACTICAL",
+   "label": "Practical",
+   "group": "Thinking style",
+   "student": {
+    "module": 3,
+    "scale": "PRACTICAL"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_THINK",
+    "scale": "PRACTICAL"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "SOCIAL",
+   "label": "Social",
+   "group": "Thinking style",
+   "student": {
+    "module": 3,
+    "scale": "SOCIAL"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_THINK",
+    "scale": "SOCIAL"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "LEADER",
+   "label": "Leadership",
+   "group": "Thinking style",
+   "student": {
+    "module": 3,
+    "scale": "LEADER"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_THINK",
+    "scale": "LEADER"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "RISK",
+   "label": "Risk-taking",
+   "group": "Thinking style",
+   "student": {
+    "module": 3,
+    "scale": "RISK"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_THINK",
+    "scale": "RISK"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "SOLO_TEAM",
+   "label": "Team preference",
+   "group": "Thinking style",
+   "student": {
+    "module": 3,
+    "scale": "SOLO_TEAM"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_THINK",
+    "scale": "SOLO_TEAM"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "EQ_TEAM",
+   "label": "Teamwork",
+   "group": "EQ",
+   "student": {
+    "module": 6,
+    "scale": "TEAM"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_EQ",
+    "scale": "TEAM"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student value = 0.7 SJT + 0.3 self-report; use SJT-weighted value"
+  },
+  {
+   "id": "EQ_STRESS",
+   "label": "Stress handling",
+   "group": "EQ",
+   "student": {
+    "module": 6,
+    "scale": "STRESS"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_EQ",
+    "scale": "STRESS"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student value = 0.7 SJT + 0.3 self-report; use SJT-weighted value"
+  },
+  {
+   "id": "EQ_LEAD",
+   "label": "Leading others",
+   "group": "EQ",
+   "student": {
+    "module": 6,
+    "scale": "LEAD"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_EQ",
+    "scale": "LEAD"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student value = 0.7 SJT + 0.3 self-report; use SJT-weighted value"
+  },
+  {
+   "id": "EQ_COMM",
+   "label": "Communication",
+   "group": "EQ",
+   "student": {
+    "module": 6,
+    "scale": "COMM"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_EQ",
+    "scale": "COMM"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student value = 0.7 SJT + 0.3 self-report; use SJT-weighted value"
+  },
+  {
+   "id": "EQ_EMPATHY",
+   "label": "Empathy",
+   "group": "EQ",
+   "student": {
+    "module": 6,
+    "scale": "EMPATHY"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_EQ",
+    "scale": "EMPATHY"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student value = 0.7 SJT + 0.3 self-report; use SJT-weighted value"
+  },
+  {
+   "id": "EQ_SELFCONTROL",
+   "label": "Self-control",
+   "group": "EQ",
+   "student": {
+    "module": 6,
+    "scale": "SELFCONTROL"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_EQ",
+    "scale": "SELFCONTROL"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student value = 0.7 SJT + 0.3 self-report; use SJT-weighted value"
+  },
+  {
+   "id": "GRIT_PE",
+   "label": "Perseverance",
+   "group": "Motivation",
+   "student": {
+    "module": 2,
+    "scale": "GRIT_PE"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_PASSION_GRIT",
+    "scale": "GRIT_PE"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "GRIT_CI",
+   "label": "Consistency of interest",
+   "group": "Motivation",
+   "student": {
+    "module": 2,
+    "scale": "GRIT_CI"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_PASSION_GRIT",
+    "scale": "GRIT_CI"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "HARM",
+   "label": "Harmonious passion",
+   "group": "Motivation",
+   "student": {
+    "module": 2,
+    "scale": "HARM"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_PASSION_GRIT",
+    "scale": "HARM"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "OBS",
+   "label": "Obsessive passion",
+   "group": "Motivation",
+   "student": {
+    "module": 2,
+    "scale": "OBS"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_PASSION_GRIT",
+    "scale": "OBS"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "PRESSURE",
+   "label": "Pressure-driven interest",
+   "group": "Motivation",
+   "student": {
+    "module": 2,
+    "scale": "PRESSURE"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_PASSION_GRIT",
+    "scale": "PRESSURE"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "TECH",
+   "label": "Tech orientation",
+   "group": "Motivation",
+   "student": {
+    "module": 2,
+    "scale": "TECH"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_PASSION_GRIT",
+    "scale": "TECH"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "ENTRE",
+   "label": "Entrepreneurial orientation",
+   "group": "Motivation",
+   "student": {
+    "module": 2,
+    "scale": "ENTRE"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_PASSION_GRIT",
+    "scale": "ENTRE"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "APT_V",
+   "label": "Verbal aptitude",
+   "group": "Aptitude",
+   "student": {
+    "module": 4,
+    "scale": "V"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "APT_PERCEIVED",
+    "scale": "V"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student uses M4 percentile"
+  },
+  {
+   "id": "APT_N",
+   "label": "Numerical aptitude",
+   "group": "Aptitude",
+   "student": {
+    "module": 4,
+    "scale": "N"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "APT_PERCEIVED",
+    "scale": "N"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student uses M4 percentile"
+  },
+  {
+   "id": "APT_L",
+   "label": "Logical aptitude",
+   "group": "Aptitude",
+   "student": {
+    "module": 4,
+    "scale": "L"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "APT_PERCEIVED",
+    "scale": "L"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student uses M4 percentile"
+  },
+  {
+   "id": "APT_S",
+   "label": "Spatial aptitude",
+   "group": "Aptitude",
+   "student": {
+    "module": 4,
+    "scale": "S"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "APT_PERCEIVED",
+    "scale": "S"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student uses M4 percentile"
+  },
+  {
+   "id": "APT_P",
+   "label": "Perceptual accuracy aptitude",
+   "group": "Aptitude",
+   "student": {
+    "module": 4,
+    "scale": "P"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "APT_PERCEIVED",
+    "scale": "P"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student uses M4 percentile"
+  },
+  {
+   "id": "APT_CRE",
+   "label": "Creativity aptitude",
+   "group": "Aptitude",
+   "student": {
+    "module": 4,
+    "scale": "CRE"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "APT_PERCEIVED",
+    "scale": "CRE"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "Student uses M4 percentile"
+  },
+  {
+   "id": "APT_EQ",
+   "label": "EQ (as perceived)",
+   "group": "Aptitude",
+   "student": {
+    "module": 6,
+    "scale": "EQ_total"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "APT_PERCEIVED",
+    "scale": "EQ"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "TEST_ANX",
+   "label": "Test anxiety",
+   "group": "Wellbeing",
+   "student": {
+    "module": 7,
+    "scale": "TEST_ANX"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_ACADEMIC",
+    "scale": "TEST_ANX"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": "High gap with student high and parent low is a priority safety insight"
+  },
+  {
+   "id": "SE_ACADEMIC",
+   "label": "Academic self-belief",
+   "group": "Wellbeing",
+   "student": {
+    "module": 7,
+    "scale": "SE_ACADEMIC"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_ACADEMIC",
+    "scale": "SE_ACADEMIC"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "RATIONAL",
+   "label": "Rational decision style",
+   "group": "Decision",
+   "student": {
+    "module": 7,
+    "scale": "RATIONAL"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_ACADEMIC",
+    "scale": "RATIONAL"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "INTUITIVE",
+   "label": "Intuitive decision style",
+   "group": "Decision",
+   "student": {
+    "module": 7,
+    "scale": "INTUITIVE"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_ACADEMIC",
+    "scale": "INTUITIVE"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "DEPENDENT",
+   "label": "Dependent decision style",
+   "group": "Decision",
+   "student": {
+    "module": 7,
+    "scale": "DEPENDENT"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_ACADEMIC",
+    "scale": "DEPENDENT"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "AVOIDANT",
+   "label": "Avoidant decision style",
+   "group": "Decision",
+   "student": {
+    "module": 7,
+    "scale": "AVOIDANT"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_ACADEMIC",
+    "scale": "AVOIDANT"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "VAL_SEC",
+   "label": "Security",
+   "group": "Values",
+   "student": {
+    "module": 5,
+    "scale": "SEC"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_VALUES",
+    "scale": "SEC"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "VAL_MON",
+   "label": "Money",
+   "group": "Values",
+   "student": {
+    "module": 5,
+    "scale": "MON"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_VALUES",
+    "scale": "MON"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "VAL_STA",
+   "label": "Status",
+   "group": "Values",
+   "student": {
+    "module": 5,
+    "scale": "STA"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_VALUES",
+    "scale": "STA"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "VAL_CRE",
+   "label": "Creativity (value)",
+   "group": "Values",
+   "student": {
+    "module": 5,
+    "scale": "CRE"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_VALUES",
+    "scale": "CRE"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "VAL_HELP",
+   "label": "Helping",
+   "group": "Values",
+   "student": {
+    "module": 5,
+    "scale": "HELP"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_VALUES",
+    "scale": "HELP"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "VAL_AUT",
+   "label": "Autonomy",
+   "group": "Values",
+   "student": {
+    "module": 5,
+    "scale": "AUT"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_VALUES",
+    "scale": "AUT"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "VAL_ADV",
+   "label": "Adventure",
+   "group": "Values",
+   "student": {
+    "module": 5,
+    "scale": "ADV"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_VALUES",
+    "scale": "ADV"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  },
+  {
+   "id": "VAL_LRN",
+   "label": "Learning",
+   "group": "Values",
+   "student": {
+    "module": 5,
+    "scale": "LRN"
+   },
+   "parent": {
+    "module": 8,
+    "sub": "MIRROR_VALUES",
+    "scale": "LRN"
+   },
+   "compare": "within-person z then gap = parent - student",
+   "note": ""
+  }
+ ],
+ "cluster_evidence": {
+  "student": {
+   "interest": "M2 INT items (likert5, best_worst, forced_choice) by key.cluster",
+   "passion": "M2 PAS FLOW and INTRINSIC by key.cluster plus open_text",
+   "aptitude": "M4 percentiles weighted by clusters.json apt",
+   "confidence": "M7 SE and SE_CAREER by key.cluster",
+   "values": "M5 value ranks via clusters.json values",
+   "stated_dream": "M1 own_dream"
+  },
+  "parent": {
+   "observed": "M8 batch 1: EARLY_BEHAVIOUR, CURRENT_BEHAVIOUR (key.cluster_hint), MULTIPLE_INTELLIGENCE (via intelligence_to_clusters), TEACHER_FEEDBACK (key.cluster_hint)",
+   "support": "M8 EXPECTATION PARENT_SUPPORT",
+   "income_worry": "M8 EXPECTATION PARENT_INCOME_WORRY",
+   "preference": "M8 EXPECTATION PARENT_PREF, PARENT_PRIDE, PARENT_RESIST; M1 parent_pref (student's view of parent)"
+  }
+ },
+ "intelligence_to_student": {
+  "LINGUISTIC": [
+   "APT_V",
+   "C14 interest"
+  ],
+  "LOGICAL_MATH": [
+   "APT_N",
+   "APT_L"
+  ],
+  "SPATIAL": [
+   "APT_S",
+   "C05 interest"
+  ],
+  "BODILY": [
+   "C13 interest",
+   "M1 hobbies sports"
+  ],
+  "MUSICAL": [
+   "APT_CRE",
+   "M1 hobbies music"
+  ],
+  "INTERPERSONAL": [
+   "APT_EQ",
+   "SOCIAL"
+  ],
+  "INTRAPERSONAL": [
+   "SOLO_TEAM low",
+   "SELF_KNOWLEDGE"
+  ],
+  "NATURALIST": [
+   "C09 interest",
+   "C10 interest",
+   "C11 interest"
+  ]
+ },
+ "teacher_tag_to_student": {
+  "CREATIVE": [
+   "APT_CRE",
+   "O"
+  ],
+  "INQUIRY": [
+   "O",
+   "APT_L"
+  ],
+  "LEADER": [
+   "LEADER"
+  ],
+  "HELPING": [
+   "A",
+   "EQ_EMPATHY"
+  ],
+  "SPORTS": [
+   "C13 interest"
+  ],
+  "VERBAL": [
+   "APT_V"
+  ],
+  "NUMERIC": [
+   "APT_N"
+  ],
+  "PRACTICAL": [
+   "PRACTICAL"
+  ],
+  "NATURE": [
+   "C09 interest",
+   "C10 interest"
+  ],
+  "SOCIAL": [
+   "E"
+  ],
+  "IMAGINATIVE": [
+   "O"
+  ],
+  "ACTIVE": [
+   "C13 interest"
+  ],
+  "QUESTIONING": [
+   "O"
+  ],
+  "HANDS_ON": [
+   "PRACTICAL"
+  ],
+  "AUTONOMY": [
+   "VAL_AUT"
+  ],
+  "EMPATHY": [
+   "EQ_EMPATHY"
+  ],
+  "PERSISTENT": [
+   "GRIT_PE"
+  ],
+  "ORGANISER": [
+   "LEADER",
+   "C"
+  ],
+  "HEALTH": [
+   "C02 interest"
+  ],
+  "PRESENTER": [
+   "EQ_COMM",
+   "E"
+  ]
+ },
+ "strength_tag_to_student": {
+  "RESILIENCE": [
+   "GRIT_PE"
+  ],
+  "GRIT": [
+   "GRIT_PE"
+  ],
+  "STABLE": [
+   "N"
+  ],
+  "SOCIAL": [
+   "E",
+   "A"
+  ],
+  "CONSCIENTIOUS": [
+   "C"
+  ],
+  "OPEN": [
+   "O"
+  ],
+  "RESPONSIBLE": [
+   "C",
+   "EQ_LEAD"
+  ],
+  "NEG_EMOTION": [
+   "N (reverse)"
+  ],
+  "SHY": [
+   "E (reverse)",
+   "EQ_COMM"
+  ],
+  "SHIFTING": [
+   "GRIT_CI (reverse)"
+  ],
+  "LOW_C": [
+   "C (reverse)"
+  ],
+  "ATTENTION": [
+   "C",
+   "refer to school counsellor or doctor if persistent; never label"
+  ],
+  "INITIATION": [
+   "C",
+   "AVOIDANT"
+  ],
+  "TEST_ANX": [
+   "TEST_ANX"
+  ]
+ },
+ "fact_checks": {
+  "marks_band": "M1 marks_band",
+  "own_dream": "M1 own_dream",
+  "certainty": "M1 certainty",
+  "study_hours": "M1 study_hours",
+  "screen_time": "M1 screen_time",
+  "sleep": "M1 sleep",
+  "hobbies": "M1 hobbies",
+  "roles": "M1 roles",
+  "awards": "M1 awards",
+  "fav_subjects": "M1 fav_subjects",
+  "best_marks_subject": "M1 best_marks_subject",
+  "budget": "M1 budget",
+  "relocate": "M1 relocate"
+ }
+}

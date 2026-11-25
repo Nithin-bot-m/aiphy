@@ -20,7 +20,7 @@ import {
   Eyebrow,
 } from "@/components/psych/ui";
 import { fmtDateTime, fmtNum } from "@/lib/format";
-import type { CanonicalResult, ParentLinkRow, ParentRequestRow, ResultsPayload } from "@/lib/types";
+import type { CanonicalResult, ParentLinkRow, ParentRequestRow, ResultsPayload, V2ResultEnvelope } from "@/lib/types";
 
 interface AssessmentsList {
   assessments?: Array<{
@@ -46,10 +46,11 @@ interface ProfileView {
 
 function useCandidateHomeData() {
   return useAsyncData(async () => {
-    const [rawProfile, assessments, results, requests] = await Promise.all([
+    const [rawProfile, assessments, results, v2Results, requests] = await Promise.all([
       api.candidate.profile() as Promise<Record<string, unknown>>,
       api.candidate.listAssessments() as Promise<AssessmentsList>,
       api.candidate.results() as Promise<ResultsPayload | null>,
+      api.v2.myResults().catch(() => null) as Promise<V2ResultEnvelope | null>,
       api.candidate.parentRequests() as Promise<{ pending?: ParentRequestRow[] }>,
     ]);
     const profile = {
@@ -57,7 +58,7 @@ function useCandidateHomeData() {
       parent_links: (rawProfile.parent_links as ParentLinkRow[]) ?? [],
       pending_parent_requests: requests.pending ?? [],
     } as ProfileView;
-    return { profile, assessments: assessments.assessments ?? [], results };
+    return { profile, assessments: assessments.assessments ?? [], results, v2Results };
   }, []);
 }
 
@@ -81,7 +82,7 @@ export function CandidateHome({ navigate }: { navigate: (to: string) => void }) 
   const name =
     data?.profile?.full_name || String((profile as { full_name?: string } | null)?.full_name ?? user?.email ?? "there");
   const inProgress = data?.assessments.find((a) => a.status === "in_progress");
-  const completed = data?.assessments.filter((a) => a.status === "completed") ?? [];
+  const v2Res = data?.v2Results?.available && data?.v2Results?.result ? data.v2Results : null;
   const result = data?.results?.result as CanonicalResult | undefined;
   const pending = data?.profile?.pending_parent_requests ?? [];
 
@@ -99,6 +100,39 @@ export function CandidateHome({ navigate }: { navigate: (to: string) => void }) 
       <section className="mt-8 space-y-4" aria-label="Assessment status">
         {loading ? (
           <Skeleton className="h-32 w-full rounded-card" />
+        ) : v2Res ? (
+          <Card className="p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge tone="ok" dot>V2 Profile Ready</Badge>
+                  <Badge tone="neutral">Grade {v2Res.result.grade}</Badge>
+                </div>
+                <p className="font-display font-bold text-[18px] mt-3">Your 16-cluster profile is ready</p>
+                <p className="text-[13.5px] text-ink-2 mt-1">
+                  Top cluster: <span className="font-semibold text-ink">{v2Res.result.clusters[0]?.name ?? "—"}</span>
+                  {v2Res.completed_at ? ` · completed ${fmtDateTime(v2Res.completed_at)}` : ""}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[13.5px]">
+                  <span className="text-ink-2">
+                    Holland code <span className="tnum font-bold text-ink">{v2Res.result.riasec_code}</span>
+                  </span>
+                  <span className="text-ink-2">
+                    Passion style <span className="font-bold text-ink">{v2Res.result.passion_type}</span>
+                  </span>
+                  <span className="text-ink-2">
+                    Grit <span className="tnum font-bold text-ink">{v2Res.result.grit_mean_5} / 5</span>
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2.5">
+                <Button variant="secondary" onClick={() => navigate("/explore")}>
+                  Explore pathways
+                </Button>
+                <Button onClick={() => navigate("/results")}>View profile</Button>
+              </div>
+            </div>
+          </Card>
         ) : result ? (
           <Card className="p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -120,9 +154,12 @@ export function CandidateHome({ navigate }: { navigate: (to: string) => void }) 
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2.5">
+              <div className="flex flex-wrap gap-2.5">
                 <Button variant="secondary" onClick={() => navigate("/explore")}>
                   Explore streams
+                </Button>
+                <Button variant="secondary" onClick={() => navigate("/assessment")}>
+                  Try V2 upgrade
                 </Button>
                 <Button onClick={() => navigate("/results")}>View profile</Button>
               </div>

@@ -10,7 +10,17 @@
  * It contains ZERO psychometric logic: no scoring, no bands, no fallback
  * numbers. Values come from the backend or they are null/absent.
  */
-import type { ApiEnvelope } from "./types";
+import type {
+  ApiEnvelope,
+  CounsellorMapEnvelope,
+  CounsellorMapV1,
+  V2AssessmentPayload,
+  V2FairnessAudit,
+  V2ParentM8Payload,
+  V2ParentSummary,
+  V2Result,
+  V2ResultEnvelope,
+} from "./types";
 
 const TOKEN_KEY = "psa.session.token";
 
@@ -227,5 +237,68 @@ export const api = {
     userExport: (id: number) => request<Record<string, unknown>>(`admin/users/${id}/export`),
     userErase: (id: number) =>
       request<Record<string, unknown>>(`admin/users/${id}/erase`, { method: "POST", body: {} }),
+  },
+
+  v2: {
+    start: () =>
+      request<{
+        assessment_id: number;
+        status: string;
+        version_code: string;
+        current_step?: number | null;
+        grade: number;
+      }>("v2/assessments/start", { method: "POST" }),
+    assessment: (assessmentId: number) =>
+      request<V2AssessmentPayload>(`v2/assessments/${assessmentId}`),
+    saveResponse: (assessmentId: number, body: Record<string, unknown>) =>
+      request<{
+        success: boolean;
+        blueprint_updated?: boolean;
+        grade?: number;
+        accommodations?: { extended_time_pct: number; simpler_wording: boolean };
+      }>(`v2/assessments/${assessmentId}/responses`, { method: "POST", body }),
+    complete: (assessmentId: number) =>
+      request<{
+        assessment_id: number;
+        result: V2Result;
+        counsellor_map_ready: boolean;
+      }>(`v2/assessments/${assessmentId}/complete`, { method: "POST" }),
+    myResults: () =>
+      request<{
+        available: boolean;
+        assessment_id?: number;
+        completed_at?: string | null;
+        version_code?: string;
+        parent_consent_sensitive?: boolean;
+        result: V2Result | null;
+      }>("v2/results"),
+    resultById: (assessmentId: number) =>
+      request<V2ResultEnvelope>(`v2/results/${assessmentId}`),
+    setParentConsent: (assessmentId: number, allowed: boolean) =>
+      request<{ assessment_id: number; parent_consent_sensitive: boolean }>(
+        `v2/assessments/${assessmentId}/parent-consent`,
+        { method: "POST", body: { parent_consent_sensitive: allowed } }
+      ),
+    parentM8: (assessmentId: number) =>
+      request<V2ParentM8Payload>(`v2/parent/m8/${assessmentId}`),
+    saveParentM8Response: (assessmentId: number, body: Record<string, unknown>) =>
+      request<{ success: boolean }>(`v2/parent/m8/${assessmentId}/responses`, { method: "POST", body }),
+    completeParentM8: (assessmentId: number) =>
+      request<{
+        assessment_id: number;
+        parent_slot: string;
+        status: string;
+        counsellor_map_updated: boolean;
+      }>(`v2/parent/m8/${assessmentId}/complete`, { method: "POST" }),
+    parentSummary: (assessmentId: number) =>
+      request<V2ParentSummary>(`v2/parent/summary/${assessmentId}`),
+    counsellorMap: (assessmentId: number) =>
+      request<CounsellorMapEnvelope>(`v2/admin/counsellor-map/${assessmentId}`),
+    generateCounsellorMap: (assessmentId: number) =>
+      request<{ success: boolean; assessment_id: number; map: CounsellorMapV1 }>(
+        `v2/admin/counsellor-map/${assessmentId}/generate`,
+        { method: "POST", body: {} }
+      ),
+    fairnessAudit: () => request<V2FairnessAudit>("v2/admin/fairness-audit"),
   },
 };

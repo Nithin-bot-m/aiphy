@@ -21,13 +21,18 @@ import {
   Tabs,
 } from "@/components/psych/ui";
 import { AptitudePanel, RiasecChart, WorkStylePanel } from "@/components/psych/dataviz";
+import { V2ResultsDashboard } from "@/components/psych/v2-results";
 import { APTITUDE_DIMENSIONS, RIASEC_DIMENSIONS, fmtDateTime, fmtNum } from "@/lib/format";
 import { sanitizeNarrative } from "@/lib/sanitize";
-import type { CanonicalResult, ResultsPayload } from "@/lib/types";
+import type { CanonicalResult, ResultsPayload, V2ResultEnvelope } from "@/lib/types";
 
 interface ResultsView extends ResultsPayload {
   narrativeHtml?: string | null;
 }
+
+type ResultsBoot =
+  | { kind: "v2"; v2: V2ResultEnvelope }
+  | { kind: "v1"; v1: ResultsView | null };
 
 /** Pull one heading-section out of the sanitized narrative (backend text). */
 function narrativeSection(html: string | null | undefined, pattern: RegExp): string | null {
@@ -51,9 +56,26 @@ function narrativeSection(html: string | null | undefined, pattern: RegExp): str
 export default function Results({ navigate }: { navigate: (to: string) => void }) {
   const { profile } = useApp();
   const [tab, setTab] = useState("overview");
-  const res = useAsyncData(async () => {
+  const res = useAsyncData(async (): Promise<ResultsBoot> => {
+    try {
+      const v2 = await api.v2.myResults();
+      if (v2?.available && v2.result && v2.assessment_id) {
+        return {
+          kind: "v2",
+          v2: {
+            assessment_id: v2.assessment_id,
+            completed_at: v2.completed_at,
+            version_code: v2.version_code,
+            parent_consent_sensitive: v2.parent_consent_sensitive,
+            result: v2.result,
+          },
+        };
+      }
+    } catch {
+      /* fall through to V1 */
+    }
     const data = (await api.candidate.results()) as ResultsPayload | null;
-    if (!data || !data.result) return data as ResultsView | null;
+    if (!data || !data.result) return { kind: "v1", v1: data as ResultsView | null };
     let narrativeHtml: string | null = null;
     try {
       const rep = (await api.reports.get(data.assessment_id, "candidate")) as unknown as {
@@ -63,7 +85,7 @@ export default function Results({ navigate }: { navigate: (to: string) => void }
     } catch {
       narrativeHtml = null; // report text is an enhancement, never required
     }
-    return { ...data, narrativeHtml } as ResultsView;
+    return { kind: "v1", v1: { ...data, narrativeHtml } as ResultsView };
   }, []);
 
   if (res.loading) {
@@ -82,7 +104,20 @@ export default function Results({ navigate }: { navigate: (to: string) => void }
       </div>
     );
   }
-  if (!res.data || !res.data.result) {
+  if (res.data?.kind === "v2") {
+    const studentName = String((profile as { full_name?: string } | null)?.full_name ?? "Student");
+    return (
+      <V2ResultsDashboard
+        envelope={res.data.v2}
+        studentName={studentName}
+        navigate={navigate}
+        onConsentChanged={() => res.reload()}
+      />
+    );
+  }
+
+  const v1Data = res.data?.kind === "v1" ? res.data.v1 : null;
+  if (!v1Data || !v1Data.result) {
     return (
       <div className="max-w-2xl mx-auto px-5 py-16">
         <Card className="p-10 text-center">
@@ -98,13 +133,13 @@ export default function Results({ navigate }: { navigate: (to: string) => void }
     );
   }
 
-  const result = res.data.result as CanonicalResult;
+  const result = v1Data.result as CanonicalResult;
   const name = result.student?.first_name || String((profile as { full_name?: string } | null)?.full_name ?? "Student");
   const top3 = (result.riasec.holland_code || "").split("");
   const topStreams = [...result.streams].sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99)).slice(0, 3);
   const workNarrative =
-    narrativeSection(res.data?.narrativeHtml, /work\s*style|work-style|grit|persistence|how you work/i) ??
-    narrativeSection(res.data?.narrativeHtml, /summary/i);
+    narrativeSection(v1Data?.narrativeHtml, /work\s*style|work-style|grit|persistence|how you work/i) ??
+    narrativeSection(v1Data?.narrativeHtml, /summary/i);
 
   return (
     <div className="max-w-4xl mx-auto px-5 py-8 sm:py-10">

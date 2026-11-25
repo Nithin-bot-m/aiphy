@@ -3,8 +3,16 @@
 const { db } = require('../config/db');
 
 // ---------- Assessment versions ----------
-async function getActiveVersion() {
+async function getActiveVersion(versionCode = 'V1') {
+  if (versionCode) {
+    const row = await db.prepare('SELECT * FROM assessment_versions WHERE version_code = ? AND is_active = 1').get(versionCode);
+    if (row) return row;
+  }
   return await db.prepare('SELECT * FROM assessment_versions WHERE is_active = 1 ORDER BY id DESC LIMIT 1').get();
+}
+
+async function getVersionByCode(code) {
+  return await db.prepare('SELECT * FROM assessment_versions WHERE version_code = ?').get(code);
 }
 
 async function getVersionById(id) {
@@ -263,7 +271,7 @@ async function getActiveScoringRules(versionId) {
 }
 
 module.exports = {
-  getActiveVersion, getVersionById, listVersions,
+  getActiveVersion, getVersionByCode, getVersionById, listVersions,
   getActiveQuestionsForVersion, countActiveByDimension, getOptionsForQuestions, getOptionById, getQuestionById,
   createAssessment, getAssessmentById, getInProgressAssessment, getLatestCompletedAssessment,
   updateAssessmentStep, completeAssessmentRow,

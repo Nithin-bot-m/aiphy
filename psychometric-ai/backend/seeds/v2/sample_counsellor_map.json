@@ -1,0 +1,755 @@
+{
+ "schema": "counsellor_map_v1",
+ "meta": {
+  "student_id": "DEMO-001",
+  "grade": "12",
+  "generated_at": "demo",
+  "norm_status": "provisional",
+  "validity_flags": [],
+  "parents_responded": [
+   "parent_1",
+   "parent_2"
+  ],
+  "demo": true
+ },
+ "student_summary": {
+  "riasec_code": "IRS",
+  "passion_type": "Harmonious",
+  "grit": 70,
+  "picks": {
+   "passion": "C10",
+   "strength": "C08",
+   "balanced": "C10"
+  },
+  "top5": [
+   "C10",
+   "C09",
+   "C08",
+   "C02",
+   "C11"
+  ]
+ },
+ "cluster_map": [
+  {
+   "id": "C10",
+   "name": "Animals and Veterinary",
+   "interest": 82,
+   "passion": 80,
+   "aptitude": 66,
+   "final": 78,
+   "confidence": 58,
+   "parent_observed": 72,
+   "parent_support": 3.0,
+   "parent_income_worry": 4.6,
+   "parent_pref": [],
+   "student_dream": true
+  },
+  {
+   "id": "C09",
+   "name": "Environment, Nature and Wildlife",
+   "interest": 80,
+   "passion": 78,
+   "aptitude": 62,
+   "final": 74,
+   "confidence": 55,
+   "parent_observed": 40,
+   "parent_support": 3.0,
+   "parent_income_worry": 4.3,
+   "parent_pref": [],
+   "student_dream": false
+  },
+  {
+   "id": "C08",
+   "name": "Life Sciences and Research",
+   "interest": 70,
+   "passion": 64,
+   "aptitude": 72,
+   "final": 71,
+   "confidence": 60,
+   "parent_observed": 66,
+   "parent_support": 4.0,
+   "parent_income_worry": 2.5,
+   "parent_pref": [],
+   "student_dream": false
+  },
+  {
+   "id": "C02",
+   "name": "Medicine and Healthcare",
+   "interest": 58,
+   "passion": 50,
+   "aptitude": 68,
+   "final": 66,
+   "confidence": 62,
+   "parent_observed": 58,
+   "parent_support": 5.0,
+   "parent_income_worry": 1.5,
+   "parent_pref": [
+    "parent_1"
+   ],
+   "student_dream": false
+  },
+  {
+   "id": "C11",
+   "name": "Agriculture and Food Science",
+   "interest": 55,
+   "passion": 48,
+   "aptitude": 60,
+   "final": 60,
+   "confidence": 52,
+   "parent_observed": 45,
+   "parent_support": 3.5,
+   "parent_income_worry": 3.5,
+   "parent_pref": [],
+   "student_dream": false
+  },
+  {
+   "id": "C12",
+   "name": "Social Impact and Public Service",
+   "interest": 56,
+   "passion": 52,
+   "aptitude": 64,
+   "final": 58,
+   "confidence": 57,
+   "parent_observed": 55,
+   "parent_support": 3.5,
+   "parent_income_worry": 3.8,
+   "parent_pref": [],
+   "student_dream": false
+  },
+  {
+   "id": "C06",
+   "name": "Education and Psychology",
+   "interest": 42,
+   "passion": 40,
+   "aptitude": 63,
+   "final": 52,
+   "confidence": 61,
+   "parent_observed": 76,
+   "parent_support": 4.0,
+   "parent_income_worry": 2.5,
+   "parent_pref": [],
+   "student_dream": false
+  },
+  {
+   "id": "C03",
+   "name": "Business, Finance and Economics",
+   "interest": 38,
+   "passion": 30,
+   "aptitude": 58,
+   "final": 47,
+   "confidence": 50,
+   "parent_observed": 35,
+   "parent_support": 5.0,
+   "parent_income_worry": 1.2,
+   "parent_pref": [
+    "parent_2"
+   ],
+   "student_dream": false
+  },
+  {
+   "id": "C01",
+   "name": "Engineering, Tech and AI",
+   "interest": 40,
+   "passion": 35,
+   "aptitude": 60,
+   "final": 46,
+   "confidence": 48,
+   "parent_observed": 38,
+   "parent_support": 4.0,
+   "parent_income_worry": 1.8,
+   "parent_pref": [],
+   "student_dream": false
+  },
+  {
+   "id": "C13",
+   "name": "Sports, Fitness and Wellness",
+   "interest": 30,
+   "passion": 28,
+   "aptitude": 45,
+   "final": 38,
+   "confidence": 40,
+   "parent_observed": 30,
+   "parent_support": 2.5,
+   "parent_income_worry": 3.0,
+   "parent_pref": [],
+   "student_dream": false
+  }
+ ],
+ "perception_gap": [
+  {
+   "id": "O",
+   "label": "Openness",
+   "group": "Personality",
+   "student": 82,
+   "parent": 70,
+   "gap": -12,
+   "flag": "none"
+  },
+  {
+   "id": "C",
+   "label": "Conscientiousness",
+   "group": "Personality",
+   "student": 48,
+   "parent": 78,
+   "gap": 30,
+   "flag": "medium"
+  },
+  {
+   "id": "N",
+   "label": "Emotional stability",
+   "group": "Personality",
+   "student": 40,
+   "parent": 58,
+   "gap": 18,
+   "flag": "none"
+  },
+  {
+   "id": "E",
+   "label": "Extraversion",
+   "group": "Personality",
+   "student": 35,
+   "parent": 52,
+   "gap": 17,
+   "flag": "none"
+  },
+  {
+   "id": "EQ_EMPATHY",
+   "label": "Empathy",
+   "group": "EQ",
+   "student": 74,
+   "parent": 58,
+   "gap": -16,
+   "flag": "none"
+  },
+  {
+   "id": "APT_N",
+   "label": "Numerical aptitude",
+   "group": "Aptitude",
+   "student": 55,
+   "parent": 80,
+   "gap": 25,
+   "flag": "medium"
+  },
+  {
+   "id": "APT_L",
+   "label": "Logical aptitude",
+   "group": "Aptitude",
+   "student": 72,
+   "parent": 70,
+   "gap": -2,
+   "flag": "none"
+  },
+  {
+   "id": "APT_V",
+   "label": "Verbal aptitude",
+   "group": "Aptitude",
+   "student": 65,
+   "parent": 62,
+   "gap": -3,
+   "flag": "none"
+  },
+  {
+   "id": "APT_S",
+   "label": "Spatial aptitude",
+   "group": "Aptitude",
+   "student": 60,
+   "parent": 48,
+   "gap": -12,
+   "flag": "none"
+  },
+  {
+   "id": "TEST_ANX",
+   "label": "Test anxiety",
+   "group": "Wellbeing",
+   "student": 82,
+   "parent": 35,
+   "gap": -47,
+   "flag": "high"
+  },
+  {
+   "id": "GRIT_PE",
+   "label": "Perseverance",
+   "group": "Motivation",
+   "student": 70,
+   "parent": 55,
+   "gap": -15,
+   "flag": "none"
+  },
+  {
+   "id": "PRESSURE",
+   "label": "Pressure-driven interest",
+   "group": "Motivation",
+   "student": 68,
+   "parent": 40,
+   "gap": -28,
+   "flag": "medium"
+  },
+  {
+   "id": "VAL_HELP",
+   "label": "Values: Helping",
+   "group": "Values",
+   "student": 90,
+   "parent": 60,
+   "gap": -30,
+   "flag": "medium"
+  },
+  {
+   "id": "VAL_MON",
+   "label": "Values: Money",
+   "group": "Values",
+   "student": 35,
+   "parent": 70,
+   "gap": 35,
+   "flag": "high"
+  }
+ ],
+ "evidence_flow": {
+  "student_nodes": [
+   {
+    "id": "S1",
+    "label": "M2 Interests: animals, nature"
+   },
+   {
+    "id": "S2",
+    "label": "M2 Passion: flow, intrinsic"
+   },
+   {
+    "id": "S3",
+    "label": "M4 Aptitude: logic 72"
+   },
+   {
+    "id": "S4",
+    "label": "M5 Values: helping first"
+   },
+   {
+    "id": "S5",
+    "label": "M6 EQ: empathy 74"
+   }
+  ],
+  "cluster_nodes": [
+   {
+    "id": "C10",
+    "label": "Animals and Veterinary"
+   },
+   {
+    "id": "C09",
+    "label": "Environment and Nature"
+   },
+   {
+    "id": "C08",
+    "label": "Life Sciences"
+   },
+   {
+    "id": "C02",
+    "label": "Medicine and Healthcare"
+   },
+   {
+    "id": "C03",
+    "label": "Business and Finance"
+   }
+  ],
+  "parent_nodes": [
+   {
+    "id": "P1",
+    "label": "Parent: early behaviour"
+   },
+   {
+    "id": "P2",
+    "label": "Parent: teacher feedback"
+   },
+   {
+    "id": "P3",
+    "label": "Parent 1 prefers Medicine"
+   },
+   {
+    "id": "P4",
+    "label": "Parent 2 prefers Business"
+   },
+   {
+    "id": "P5",
+    "label": "Parent: income worry"
+   }
+  ],
+  "links": [
+   {
+    "from": "S1",
+    "to": "C10",
+    "w": 8
+   },
+   {
+    "from": "S1",
+    "to": "C09",
+    "w": 7
+   },
+   {
+    "from": "S2",
+    "to": "C10",
+    "w": 7
+   },
+   {
+    "from": "S2",
+    "to": "C09",
+    "w": 6
+   },
+   {
+    "from": "S3",
+    "to": "C08",
+    "w": 6
+   },
+   {
+    "from": "S3",
+    "to": "C02",
+    "w": 5
+   },
+   {
+    "from": "S4",
+    "to": "C10",
+    "w": 5
+   },
+   {
+    "from": "S4",
+    "to": "C09",
+    "w": 4
+   },
+   {
+    "from": "S5",
+    "to": "C02",
+    "w": 3
+   },
+   {
+    "from": "C10",
+    "to": "P1",
+    "w": 6
+   },
+   {
+    "from": "C08",
+    "to": "P2",
+    "w": 5
+   },
+   {
+    "from": "C02",
+    "to": "P3",
+    "w": 6
+   },
+   {
+    "from": "C03",
+    "to": "P4",
+    "w": 6
+   },
+   {
+    "from": "C10",
+    "to": "P5",
+    "w": 5
+   },
+   {
+    "from": "C09",
+    "to": "P5",
+    "w": 4
+   }
+  ]
+ },
+ "insights": [
+  {
+   "id": "I1",
+   "pattern": "P11 WELLBEING_FLAG",
+   "severity": "high",
+   "title": "Exam anxiety the parent may not see",
+   "cluster": null,
+   "student_said": [
+    {
+     "summary": "Agrees that the mind goes blank before exams and that worry about marks makes it hard to concentrate (test anxiety high)",
+     "items": [
+      "M7-ANXIETY-0013",
+      "M7-ANXIETY-0015"
+     ]
+    }
+   ],
+   "parent_said": [
+    {
+     "summary": "Describes the child as calm before exams",
+     "items": [
+      "M8-MIRROR_ACADEMIC-0041"
+     ]
+    }
+   ],
+   "meaning": "Large gap on test anxiety: the student carries stress the parent does not notice. This is context for the session, not a diagnosis.",
+   "suggestions": [
+    "Open the session with the student alone and ask how exams feel",
+    "Teach one short exam-routine (planning, breathing, sleep) and agree a follow-up date",
+    "If the student describes hopelessness or panic, follow the school's escalation protocol"
+   ],
+   "talking_points": [
+    "Many students feel more exam pressure than they show",
+    "Calm preparation helps marks more than extra hours"
+   ],
+   "avoid": "Do not share the anxiety score with parents without the student's consent; do not use medical labels."
+  },
+  {
+   "id": "I2",
+   "pattern": "P04 EXPECTATION_GAP",
+   "severity": "high",
+   "title": "Parents prefer Business and Medicine; student fits Animals and Environment",
+   "cluster": "C10",
+   "student_said": [
+    {
+     "summary": "Top fits: Animals and Veterinary (78), Environment (74). Own dream: veterinary work",
+     "items": [
+      "M1-015",
+      "M2-INT-0021",
+      "M2-INT-0407"
+     ]
+    }
+   ],
+   "parent_said": [
+    {
+     "summary": "Parent 1 prefers Medicine; Parent 2 prefers Business, which ranks 8th for this student",
+     "items": [
+      "M8-EXPECTATION-0371",
+      "M8-EXPECTATION-0372"
+     ]
+    }
+   ],
+   "meaning": "Medicine is in the student's top 5, so one parent's wish is partly aligned. Business is not.",
+   "suggestions": [
+    "Show the fit scores for Medicine, Business and Veterinary side by side",
+    "Explore the shared entrance route for MBBS and BVSc (verify the exam rules for the current year)",
+    "Ask each parent what outcome they most want: income, status or security, then match options to that"
+   ],
+   "talking_points": [
+    "The child is strong in science, so the medical-science family of courses is open",
+    "Your child's interest in animals is a strength worth building on, with real paths"
+   ],
+   "avoid": "Do not tell parents their preference is wrong."
+  },
+  {
+   "id": "I3",
+   "pattern": "P05 INCOME_WORRY",
+   "severity": "medium",
+   "title": "High income worry on the student's top fields",
+   "cluster": "C10",
+   "student_said": [
+    {
+     "summary": "Values Helping first and Money 7th of 8",
+     "items": [
+      "M5-RA-0612"
+     ]
+    }
+   ],
+   "parent_said": [
+    {
+     "summary": "Worry about income is high for Animals (4.6) and Environment (4.3)",
+     "items": [
+      "M8-EXPECTATION-0345",
+      "M8-EXPECTATION-0347"
+     ]
+    }
+   ],
+   "meaning": "The concern is about earning, not about the child's ability.",
+   "suggestions": [
+    "Bring the verified earning ladder (entry, 5-year, 10-year) for veterinary, wildlife and animal nutrition roles; data is pending for this build",
+    "Show specialisations and private-practice or research routes with higher income",
+    "Compare course cost against likely return"
+   ],
+   "talking_points": [
+    "Let us look at what people in these fields actually earn at each stage"
+   ],
+   "avoid": "Do not quote salaries without a verified source."
+  },
+  {
+   "id": "I4",
+   "pattern": "P03 PARENT_BLIND_SPOT",
+   "severity": "medium",
+   "title": "Strong nature interest the parents have barely noticed",
+   "cluster": "C09",
+   "student_said": [
+    {
+     "summary": "Love for observing nature and identifying birds and plants; loses track of time doing so",
+     "items": [
+      "M2-INT-0033",
+      "M2-PAS-0221"
+     ]
+    }
+   ],
+   "parent_said": [
+    {
+     "summary": "Few nature behaviours seen in early years or now (observed 40)",
+     "items": [
+      "M8-EARLY_BEHAVIOUR-0058"
+     ]
+    }
+   ],
+   "meaning": "The interest may be expressed outside the parents' sight.",
+   "suggestions": [
+    "Ask the student to show a photo journal, trek or garden project",
+    "With consent, share the concrete evidence with the parents",
+    "Suggest one low-cost trial such as a nature club or wildlife volunteering"
+   ],
+   "talking_points": [
+    "Your child does this on their own time, which is a sign of real interest"
+   ],
+   "avoid": "Do not call the parents inattentive."
+  },
+  {
+   "id": "I5",
+   "pattern": "P02 HIDDEN_TALENT",
+   "severity": "medium",
+   "title": "Parent sees a talent for teaching and guiding that the student ranks low",
+   "cluster": "C06",
+   "student_said": [
+    {
+     "summary": "Low interest in Education and Psychology (42) but good empathy score (74)",
+     "items": [
+      "M2-INT-0101",
+      "M6-EMPATHY-0030"
+     ]
+    }
+   ],
+   "parent_said": [
+    {
+     "summary": "Strong early and current helping behaviour; teachers praise helping classmates (76)",
+     "items": [
+      "M8-TEACHER_FEEDBACK-0020",
+      "M8-EARLY_BEHAVIOUR-0102"
+     ]
+    }
+   ],
+   "meaning": "A strength that does not match the student's current interests.",
+   "suggestions": [
+    "Ask what the student thinks about the teacher comments",
+    "Suggest peer-tutoring or mentoring for a term as a low-pressure test",
+    "Keep it as a supporting skill for veterinary or public-health careers"
+   ],
+   "talking_points": [
+    "This is a strength you may use in any career, not a different career you must choose"
+   ],
+   "avoid": "Do not push it as an alternative to the student's own interest."
+  },
+  {
+   "id": "I6",
+   "pattern": "P08 APTITUDE_EXPECTATION_MISMATCH",
+   "severity": "medium",
+   "title": "Parent rates maths higher than the test shows",
+   "cluster": "C02",
+   "student_said": [
+    {
+     "summary": "Numerical aptitude is moderate (55); logical is strong (72)",
+     "items": [
+      "M4 percentile N",
+      "M4 percentile L"
+     ]
+    }
+   ],
+   "parent_said": [
+    {
+     "summary": "Rates the child much stronger than peers in maths (80)",
+     "items": [
+      "M8-APT_PERCEIVED-0200"
+     ]
+    }
+   ],
+   "meaning": "Logical strength supports science; numerical skill may need building for competitive exams.",
+   "suggestions": [
+    "Show the logical strength as evidence the child can do science",
+    "Offer a 6-month practice plan for numerical speed before entrance exams",
+    "Review recent maths marks together"
+   ],
+   "talking_points": [
+    "The child is good at reasoning; speed with numbers can be trained"
+   ],
+   "avoid": "Do not compare with siblings or classmates."
+  },
+  {
+   "id": "I7",
+   "pattern": "P10 PARENT_DISAGREEMENT",
+   "severity": "medium",
+   "title": "The two parents want different careers",
+   "cluster": null,
+   "student_said": [],
+   "parent_said": [
+    {
+     "summary": "Parent 1: Medicine. Parent 2: Business",
+     "items": [
+      "M8-EXPECTATION-0371",
+      "M8-EXPECTATION-0372"
+     ]
+    }
+   ],
+   "meaning": "The child may feel pulled in two directions.",
+   "suggestions": [
+    "Run a joint session and agree the criteria first: interest, ability, income, location",
+    "Then compare options against those criteria"
+   ],
+   "talking_points": [
+    "Let us first agree what a good outcome looks like for your child"
+   ],
+   "avoid": "Do not take sides between the parents."
+  },
+  {
+   "id": "I8",
+   "pattern": "P07 PERCEPTION_GAP_TRAIT",
+   "severity": "info",
+   "title": "Parents think the child values money more than the child does",
+   "cluster": null,
+   "student_said": [
+    {
+     "summary": "Helping ranks 1st; Money ranks 7th",
+     "items": [
+      "M5-LI-0001"
+     ]
+    }
+   ],
+   "parent_said": [
+    {
+     "summary": "Expects Money and Security to matter most",
+     "items": [
+      "M8-MIRROR_VALUES-0150"
+     ]
+    }
+   ],
+   "meaning": "Different assumptions about what a good career is.",
+   "suggestions": [
+    "Ask the student to explain their values in their own words to the parents"
+   ],
+   "talking_points": [
+    "Your child cares about helping people and animals"
+   ],
+   "avoid": "Do not dismiss the parents' security concerns."
+  }
+ ],
+ "red_flags": [
+  "High test anxiety reported by the student; parent unaware. Arrange a follow-up conversation."
+ ],
+ "session_plan": [
+  {
+   "min": 5,
+   "step": "Open together",
+   "goal": "Explain that the report is a conversation starter, not a verdict"
+  },
+  {
+   "min": 10,
+   "step": "Student alone",
+   "goal": "Check exam anxiety, hear their own words on animals and nature"
+  },
+  {
+   "min": 10,
+   "step": "Parents alone",
+   "goal": "Understand what outcome they want: income, status, security"
+  },
+  {
+   "min": 20,
+   "step": "Joint: evidence and options",
+   "goal": "Walk through the map; compare Veterinary, Medicine and Environment routes"
+  },
+  {
+   "min": 10,
+   "step": "Next steps",
+   "goal": "Agree a trial activity, a numerical practice plan and a follow-up date"
+  }
+ ],
+ "data_gaps": [
+  "Verified earning ladder not supplied for Animals and Environment (data pending)",
+  "Norms are provisional for this grade",
+  "Entrance-exam rules must be verified for the current year"
+ ],
+ "counsellor_summary": "Student and parents agree on science, but the parents are split between Medicine and Business while the student is drawn to animals and nature. The main gaps are exam anxiety the parents do not see and a worry about income. A shared science route and verified earning data can bridge the views."
+}

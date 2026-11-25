@@ -45,6 +45,40 @@ async function auditLlmCall({ assessmentId, userId, reportType, promptVersionId,
   }
 }
 
+function buildOfflineV2Narrative(reportType, result) {
+  const { escapeHtml } = require('../../utils/htmlSanitizer');
+  const esc = escapeHtml;
+  const clusters = (result.clusters || []).slice(0, 5);
+  const clusterList = clusters.length > 0
+    ? clusters.map(c => `<li><strong>${esc(c.name)}</strong> (${esc(c.id)}) — fit ${esc(String(c.final))}%, interest ${esc(String(c.interest))}%, aptitude ${esc(String(c.aptitude))}%.</li>`).join('')
+    : '<li>Cluster summary not available yet.</li>';
+
+  if (reportType === 'parent') {
+    return `
+      <h3>Understanding This Profile</h3>
+      <p>This educational guidance summary brings together your child's measured aptitude patterns, interests (RIASEC code <strong>${esc(result.riasec_code || 'N/A')}</strong>), and everyday learning style across 16 career clusters.</p>
+      <h3>Top Career Clusters</h3>
+      <ul>${clusterList}</ul>
+      <h3>Supportive Next Steps</h3>
+      <ul>
+        <li>Ask what felt engaging across reasoning and problem-solving tasks.</li>
+        <li>Discuss day-to-day school subjects and curiosity rather than job labels.</li>
+      </ul>
+      <p><em>Norms status: ${esc(result.norm_status || 'provisional')}. Educational guidance only.</em></p>`;
+  }
+
+  return `
+    <h3>Career Cluster Profile</h3>
+    <p>Holland Interest Code: <strong>${esc(result.riasec_code || 'N/A')}</strong> · Grade <strong>${esc(String(result.grade || 10))}</strong> · Norms: <strong>${esc(result.norm_status || 'provisional')}</strong>.</p>
+    <h3>Top 5 Career Clusters</h3>
+    <ul>${clusterList}</ul>
+    <h3>Next Exploration Steps</h3>
+    <ol>
+      <li>Review your Passion Pick, Strength Pick, and Balanced Pick in Results.</li>
+      <li>Inspect course options and entrance details carefully (verify rules for the current year).</li>
+    </ol>`;
+}
+
 /**
  * Deterministic offline narrative (fallback / no-API-key mode).
  * IMPORTANT: renders ONLY values present in the canonical JSON — no defaults,
@@ -52,6 +86,9 @@ async function auditLlmCall({ assessmentId, userId, reportType, promptVersionId,
  * explicit "not available" text.
  */
 function buildOfflineNarrative(reportType, result) {
+  if (Array.isArray(result?.clusters)) {
+    return buildOfflineV2Narrative(reportType, result);
+  }
   const { escapeHtml } = require('../../utils/htmlSanitizer');
   const esc = escapeHtml;
   const studentName = esc(result.student.first_name || 'the student');

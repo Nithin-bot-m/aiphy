@@ -321,6 +321,8 @@ export interface ParentChildRow {
   completed_at?: string | null;
   latest_assessment_id: number | null;
   assessment_status: string | null;
+  version_code?: string;
+  m8_status?: string | null;
 }
 
 export interface ParentChildDashboard {
@@ -376,20 +378,27 @@ export interface AdminDashboard {
 }
 
 export interface AdminCandidateRow {
+  id?: number;
   student_id?: number;
   user_id?: number;
   full_name: string;
   email?: string | null;
+  phone?: string | null;
   grade?: number | null;
   school_name?: string | null;
   board?: string | null;
   student_code?: string;
   latest_assessment_id?: number | null;
+  latest_completed_assessment_id?: number | null;
+  version_code?: string | null;
   assessment_status?: string | null;
   completed_at?: string | null;
   overall_index?: number | null;
   holland_code?: string | null;
   top_stream?: string | null;
+  counsellor_map_status?: string | null;
+  v2_riasec_code?: string | null;
+  v2_top_clusters?: string[] | null;
   is_demo?: number | boolean;
   [k: string]: unknown;
 }
@@ -449,4 +458,316 @@ export interface AuditRow {
   detail?: string | null;
   created_at: string;
   [k: string]: unknown;
+}
+
+/* ---------- V2 Psychometrics, Parent M8 & Counsellor Map ---------- */
+
+export interface V2ItemOption {
+  k: string;
+  text: string;
+  [extra: string]: unknown;
+}
+
+export interface V2Item {
+  id: number;
+  external_id: string;
+  module: number;
+  respondent: "student" | "parent";
+  sub: string | null;
+  dim: string | null;
+  field_name: string | null;
+  item_type: "likert5" | "single_select" | "mcq" | "forced_choice" | "scenario" | "sjt" | "best_worst" | "ranking" | "multi_select" | "open_text" | string;
+  grade_scope: string | null;
+  difficulty: string | null;
+  time_sec: number | null;
+  scale_name: string | null;
+  stem: string;
+  options: V2ItemOption[];
+}
+
+export interface V2ResponseValue {
+  answer_key?: string | null;
+  numeric_value?: number | null;
+  response_json?: unknown;
+  response_text?: string | null;
+}
+
+export interface V2AssessmentPayload {
+  assessment_id: number;
+  version_code: string;
+  strategy: string;
+  grade: number;
+  accommodations: { extended_time_pct: number; simpler_wording: boolean };
+  total_questions: number;
+  answered: number;
+  current_step: number | null;
+  questions: V2Item[];
+  responses: Record<string, V2ResponseValue>;
+}
+
+export interface V2ClusterRow {
+  id: string;
+  name: string;
+  riasec: string[];
+  interest: number;
+  passion: number;
+  aptitude: number;
+  final: number;
+  confidence_se?: number;
+  stream10?: string;
+  courses?: string[];
+  exams?: Array<string | { name: string; note?: string }>;
+  earning_ladder?: string;
+  reality?: {
+    stream10?: string;
+    courses?: string[];
+    exams?: Array<string | { name: string; note?: string }>;
+    earning_ladder?: string;
+    note?: string;
+  };
+  [k: string]: unknown;
+}
+
+export interface V2Result {
+  schema: string;
+  grade: string;
+  norm_status: "provisional" | "final" | string;
+  validity: {
+    flags: Array<{ code: string; severity?: string; detail?: string }>;
+    is_provisional_due_to_validity?: boolean;
+    distress_detected?: boolean;
+  };
+  riasec_code: string;
+  riasec: Record<string, number>;
+  passion_type: string;
+  grit: number;
+  grit_mean_5: number;
+  aptitude: Record<string, number>;
+  creativity_detail?: Record<string, unknown>;
+  personality: Record<string, number>;
+  thinking_styles: Record<string, number>;
+  eq_facets: Record<string, number>;
+  eq_self_awareness_flag?: boolean;
+  values_rank: string[];
+  values_scores: Record<string, number>;
+  readiness: {
+    test_anxiety_mean: number;
+    test_anxiety_idx: number;
+    se_academic_idx: number | null;
+    decision_style: string | null;
+    decision_scores: Record<string, number>;
+    career_maturity_mean: number;
+    career_awareness_pct: number | null;
+    harm_mean: number;
+    obs_mean: number;
+    pressure_mean: number;
+  };
+  m1_context: {
+    board?: string | null;
+    marks_band?: string | null;
+    own_dream?: string | null;
+    parent_pref?: string | null;
+    certainty?: string | null;
+    fav_subjects?: string[] | null;
+    budget?: string | null;
+    relocate?: string | null;
+    accommodations?: { extended_time_pct?: number; simpler_wording?: boolean };
+  };
+  clusters: V2ClusterRow[];
+  top5: string[];
+  picks: {
+    passion: string;
+    strength: string;
+    balanced: string;
+  };
+  confidence: string;
+  confidence_spread: number;
+  hidden_gems: Array<{
+    id: string;
+    name: string;
+    interest: number;
+    passion: number;
+    aptitude: number;
+    careers: string[];
+    courses: string[];
+    earning_ladder?: { entry: string; five_year: string; ten_year: string } | string;
+  }>;
+  growth_paths: Array<{
+    id: string;
+    name: string;
+    interest: number;
+    passion: number;
+    aptitude: number;
+    weak_dimensions?: Array<{ dim: string; score: number }>;
+    needs_steady_practice?: boolean;
+    six_month_plan: string;
+  }>;
+  streams_10: Array<{
+    id: string;
+    name: string;
+    score: number;
+    band: string;
+    top_cluster: string | null;
+  }>;
+  courses_12: Array<{
+    cluster_id: string;
+    cluster_name: string;
+    final_score: number;
+    courses: string[];
+    careers?: string[];
+    exams: string[];
+    earning_ladder?: string;
+  }>;
+  reality_check: {
+    budget_fit?: string | null;
+    relocation_fit?: string | null;
+    preparation_needed_note?: string | null;
+    low_awareness_note?: string | null;
+    backup_routes?: Array<{ cluster_id: string; name: string; courses: string[] }>;
+  };
+  limitations: string[];
+}
+
+export interface V2ResultEnvelope {
+  available?: boolean;
+  assessment_id: number;
+  completed_at?: string | null;
+  version_code?: string;
+  parent_consent_sensitive?: boolean;
+  result: V2Result;
+}
+
+export interface V2ParentM8Payload {
+  assessment_id: number;
+  parent_slot: "parent_1" | "parent_2" | string;
+  status: string;
+  total_questions: number;
+  answered: number;
+  questions: V2Item[];
+  responses: Record<string, V2ResponseValue>;
+}
+
+export interface V2ParentSummary {
+  available: boolean;
+  reason?: string;
+  grade?: string;
+  norm_status?: string;
+  riasec_code?: string;
+  top_clusters?: Array<{ id: string; name: string; final: number; interest: number; aptitude: number; stream10?: string }>;
+  streams_10?: Array<{ id: string; name: string; score: number; band: string; top_cluster: string | null }>;
+  courses_12?: Array<{ cluster_id: string; cluster_name: string; final_score: number; courses: string[]; exams: string[]; earning_ladder?: string }>;
+  my_m8_status?: string;
+  my_m8_pref?: string | null;
+  shared_talking_points?: Array<{
+    id: string;
+    title: string;
+    severity: string;
+    meaning: string;
+    talking_points?: string[];
+  }>;
+}
+
+export interface CounsellorMapV1 {
+  schema: string;
+  meta: {
+    student_id: string;
+    grade: string;
+    generated_at: string;
+    norm_status: string;
+    validity_flags: string[];
+    parents_responded: string[];
+    demo?: boolean;
+  };
+  student_summary: {
+    riasec_code: string;
+    passion_type: string;
+    grit: number;
+    picks: { passion: string; strength: string; balanced: string };
+    top5: string[];
+  };
+  cluster_map: Array<{
+    id: string;
+    name: string;
+    interest: number;
+    passion: number;
+    aptitude: number;
+    final: number;
+    confidence: number;
+    parent_observed: number | null;
+    parent_support: number | null;
+    parent_income_worry: number | null;
+    parent_pref: string[];
+    student_dream: boolean;
+  }>;
+  perception_gap: Array<{
+    id: string;
+    label: string;
+    group: string;
+    student: number;
+    parent: number;
+    gap: number;
+    flag: "high" | "medium" | "none" | string;
+    parent_items?: string[];
+  }>;
+  evidence_flow: {
+    student_nodes: Array<{ id: string; label: string }>;
+    cluster_nodes: Array<{ id: string; label: string }>;
+    parent_nodes: Array<{ id: string; label: string }>;
+    links: Array<{ from: string; to: string; w: number }>;
+  };
+  insights: Array<{
+    id: string;
+    pattern: string;
+    title: string;
+    severity: "high" | "medium" | "positive" | "info" | string;
+    cluster?: string | null;
+    student_said?: Array<{ summary: string; items?: string[] }>;
+    parent_said?: Array<{ summary: string; items?: string[] }>;
+    meaning: string;
+    suggestions?: string[];
+    talking_points?: string[];
+    avoid?: string;
+  }>;
+  red_flags: string[];
+  session_plan: Array<{ min: number; step: string; goal: string }>;
+  data_gaps: string[];
+  counsellor_summary: string;
+}
+
+export interface CounsellorMapEnvelope {
+  assessment_id: number;
+  student: {
+    id: number;
+    full_name: string;
+    grade: number | null;
+    school_name: string | null;
+    board: string | null;
+    student_code: string;
+  } | null;
+  status: string;
+  schema_version: string;
+  model: string;
+  generated_at: string;
+  parent_sessions: Array<{
+    parent_slot: string;
+    status: string;
+    completed_at: string | null;
+    student_consent_sensitive: boolean;
+  }>;
+  scoring: V2Result;
+  map: CounsellorMapV1;
+}
+
+export interface V2FairnessAudit {
+  total_v2_completed: number;
+  grade_norms: {
+    grade_10: { completed_n: number; norm_status: string; threshold: number };
+    grade_12: { completed_n: number; norm_status: string; threshold: number };
+  };
+  gender_counts: Record<string, number>;
+  fairness_disparity_flags: Array<{
+    cluster_id: string;
+    gap_sd: number;
+    breakdown: Array<{ gender: string; n: number; mean: number }>;
+  }>;
 }

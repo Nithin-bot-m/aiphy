@@ -26,19 +26,24 @@ import {
   Wordmark,
 } from "@/components/psych/ui";
 import { DistributionBars } from "@/components/psych/dataviz";
+import { CounsellorMapConsoleView, FairnessNormsPanel } from "@/components/psych/counsellor-map";
 import { fmtDateTime, fmtNum, initials, shortHash } from "@/lib/format";
 import type {
   AdminCandidateRow,
   AdminDashboard,
   AdminQuestionRow,
   AuditRow,
+  CounsellorMapEnvelope,
   PromptRow,
   StreamRuleRow,
+  V2FairnessAudit,
 } from "@/lib/types";
 
 const TABS = [
   { key: "dashboard", label: "Dashboard" },
   { key: "candidates", label: "Candidates" },
+  { key: "counsellor", label: "Counsellor Map" },
+  { key: "fairness", label: "Norms & Fairness" },
   { key: "assessments", label: "Assessments" },
   { key: "questions", label: "Questions" },
   { key: "scoring", label: "Scoring" },
@@ -188,11 +193,24 @@ function TableShell({
 export default function Admin() {
   const { pushToast } = useApp();
   const [tab, setTab] = useState<TabKey>("dashboard");
+  const [selectedMapAssessmentId, setSelectedMapAssessmentId] = useState<number | null>(null);
+
+  const openCounsellorMap = (assessmentId: number) => {
+    setSelectedMapAssessmentId(assessmentId);
+    setTab("counsellor");
+  };
 
   return (
     <ConsoleShell tab={tab} setTab={setTab}>
       {tab === "dashboard" && <DashboardTab go={setTab} />}
-      {tab === "candidates" && <CandidatesTab />}
+      {tab === "candidates" && <CandidatesTab onOpenMap={openCounsellorMap} />}
+      {tab === "counsellor" && (
+        <CounsellorMapTab
+          assessmentId={selectedMapAssessmentId}
+          onSelectAssessment={setSelectedMapAssessmentId}
+        />
+      )}
+      {tab === "fairness" && <FairnessAuditTab />}
       {tab === "assessments" && <AssessmentsTab />}
       {tab === "questions" && <QuestionsTab onError={(m) => pushToast(m, "bad")} onOk={(m) => pushToast(m, "success")} />}
       {tab === "scoring" && <ScoringTab onError={(m) => pushToast(m, "bad")} onOk={(m) => pushToast(m, "success")} />}
@@ -298,7 +316,7 @@ function DashboardTab({ go }: { go: (t: TabKey) => void }) {
 
 /* ---------------- candidates ---------------- */
 
-function CandidatesTab() {
+function CandidatesTab({ onOpenMap }: { onOpenMap: (assessmentId: number) => void }) {
   const [q, setQ] = useState("");
   const res = useAsyncData(async () => (await api.admin.candidates()) as unknown as { candidates?: AdminCandidateRow[] }, []);
   const rows = (res.data?.candidates ?? []) as AdminCandidateRow[];
@@ -325,26 +343,126 @@ function CandidatesTab() {
       ) : res.error ? (
         <ErrorState message={res.error.message} onRetry={res.reload} />
       ) : (
-        <TableShell head={["Candidate", "Code", "Grade", "Status", "Overall", "Holland", "Top stream"]} emptyText="No candidates registered yet.">
-          {filtered.map((r, i) => (
-            <tr key={r.student_id ?? r.user_id ?? i} className="bg-surface hover:bg-paper/60">
-              <td className="px-4 py-3 font-semibold">
-                {r.full_name}
-                {r.is_demo ? <Badge tone="neutral" className="ml-2">Demo</Badge> : null}
-              </td>
-              <td className="px-4 py-3 tnum text-ink-2">{r.student_code ?? "—"}</td>
-              <td className="px-4 py-3 tnum">{r.grade ?? "—"}</td>
-              <td className="px-4 py-3">
-                <Badge tone={r.assessment_status === "completed" ? "ok" : r.assessment_status === "in_progress" ? "warn" : "neutral"}>
-                  {r.assessment_status?.replace(/_/g, " ") ?? "not started"}
-                </Badge>
-              </td>
-              <td className="px-4 py-3 tnum font-bold">{fmtNum(r.overall_index)}</td>
-              <td className="px-4 py-3 tnum font-semibold">{r.holland_code ?? "—"}</td>
-              <td className="px-4 py-3 text-ink-2 truncate max-w-[180px]">{r.top_stream ?? "—"}</td>
-            </tr>
-          ))}
+        <TableShell head={["Candidate", "Code", "Grade", "Version", "Holland", "Top fit", "Console"]} emptyText="No candidates registered yet.">
+          {filtered.map((r, i) => {
+            const aid = r.latest_completed_assessment_id ?? r.latest_assessment_id ?? null;
+            const isV2 = r.version_code === "V2";
+            const holland = r.v2_riasec_code ?? r.holland_code ?? "—";
+            return (
+              <tr key={r.id ?? r.student_id ?? r.user_id ?? i} className="bg-surface hover:bg-paper/60">
+                <td className="px-4 py-3 font-semibold">
+                  {r.full_name}
+                  {r.is_demo ? <Badge tone="neutral" className="ml-2">Demo</Badge> : null}
+                </td>
+                <td className="px-4 py-3 tnum text-ink-2">{r.student_code ?? "—"}</td>
+                <td className="px-4 py-3 tnum">{r.grade ?? "—"}</td>
+                <td className="px-4 py-3">
+                  <Badge tone={isV2 ? "brand" : "neutral"}>
+                    {r.version_code || (aid ? "V1" : "Not started")}
+                  </Badge>
+                </td>
+                <td className="px-4 py-3 tnum font-semibold">{holland}</td>
+                <td className="px-4 py-3 text-ink-2 truncate max-w-[180px]">{r.top_stream ?? "—"}</td>
+                <td className="px-4 py-3">
+                  {isV2 && aid != null ? (
+                    <Button size="sm" variant="secondary" onClick={() => onOpenMap(aid)}>
+                      Open Map
+                    </Button>
+                  ) : (
+                    <span className="text-[12px] text-ink-3">—</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </TableShell>
+      )}
+    </div>
+  );
+}
+
+function CounsellorMapTab({
+  assessmentId,
+  onSelectAssessment,
+}: {
+  assessmentId: number | null;
+  onSelectAssessment: (id: number) => void;
+}) {
+  const candidatesRes = useAsyncData(
+    async () => (await api.admin.candidates()) as unknown as { candidates?: AdminCandidateRow[] },
+    []
+  );
+  const v2Candidates = (candidatesRes.data?.candidates ?? []).filter(
+    (c) => c.version_code === "V2" && (c.latest_completed_assessment_id ?? c.latest_assessment_id) != null
+  );
+
+  const activeId =
+    assessmentId ??
+    (v2Candidates[0]?.latest_completed_assessment_id ?? v2Candidates[0]?.latest_assessment_id ?? null);
+
+  const mapRes = useAsyncData(async (): Promise<CounsellorMapEnvelope | null> => {
+    if (activeId == null) return null;
+    return await api.v2.counsellorMap(activeId);
+  }, [activeId]);
+
+  return (
+    <div>
+      <AdminTitle
+        title="Counsellor Mapping Console"
+        sub="Private evidence triangulation across Student Modules M1–M7 and Parent Module 8 (P01–P15 pattern detectors)."
+        action={
+          v2Candidates.length > 0 ? (
+            <Select
+              aria-label="Choose completed V2 student"
+              value={activeId != null ? String(activeId) : ""}
+              onChange={(e) => onSelectAssessment(Number(e.target.value))}
+              className="w-64"
+            >
+              {v2Candidates.map((c) => {
+                const aid = c.latest_completed_assessment_id ?? c.latest_assessment_id ?? 0;
+                return (
+                  <option key={aid} value={aid}>
+                    {c.full_name} ({c.student_code}) · Gr {c.grade ?? "10"}
+                  </option>
+                );
+              })}
+            </Select>
+          ) : undefined
+        }
+      />
+
+      {candidatesRes.loading || mapRes.loading ? (
+        <Skeleton className="h-96 rounded-card" />
+      ) : candidatesRes.error ? (
+        <ErrorState message={candidatesRes.error.message} onRetry={candidatesRes.reload} />
+      ) : v2Candidates.length === 0 ? (
+        <EmptyState
+          title="No completed V2 assessments yet"
+          body="Once a student completes a V2 assessment, their Cluster Map, Construct Perception Gap, Evidence Flow, and 60-min Session Plan will appear here."
+        />
+      ) : mapRes.error ? (
+        <ErrorState message={mapRes.error.message} onRetry={mapRes.reload} />
+      ) : mapRes.data ? (
+        <CounsellorMapConsoleView envelope={mapRes.data} onRegenerated={mapRes.reload} />
+      ) : null}
+    </div>
+  );
+}
+
+function FairnessAuditTab() {
+  const res = useAsyncData(async (): Promise<V2FairnessAudit> => api.v2.fairnessAudit(), []);
+  return (
+    <div>
+      <AdminTitle
+        title="Norms & Fairness Audit"
+        sub="Tracks Grade 10 & Grade 12 calibration sample counts (threshold N=500) and monitors post-release cluster disparity (> 0.3 SD)."
+      />
+      {res.loading ? (
+        <Skeleton className="h-64 rounded-card" />
+      ) : res.error || !res.data ? (
+        <ErrorState message={res.error?.message ?? "Could not load fairness audit."} onRetry={res.reload} />
+      ) : (
+        <FairnessNormsPanel audit={res.data} />
       )}
     </div>
   );

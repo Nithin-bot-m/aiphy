@@ -17,6 +17,7 @@ import {
   ErrorState,
   Field,
   Input,
+  Progress,
   Select,
   Skeleton,
   SkeletonCard,
@@ -24,8 +25,16 @@ import {
   Eyebrow,
 } from "@/components/psych/ui";
 import { AlignmentCard } from "@/components/psych/dataviz";
+import { V2ItemInput, isV2Answered } from "@/components/psych/assessment-ui";
 import { fmtDateTime } from "@/lib/format";
-import type { ParentChildDashboard, ParentChildRow, Congruence } from "@/lib/types";
+import type {
+  ParentChildDashboard,
+  ParentChildRow,
+  Congruence,
+  V2ParentM8Payload,
+  V2ParentSummary,
+  V2ResponseValue,
+} from "@/lib/types";
 import ReportReader from "./Report";
 
 const STREAM_LABELS: Record<string, string> = {
@@ -176,6 +185,7 @@ export function ParentHome() {
                           <Badge tone={pending ? "warn" : "ok"} dot>
                             {pending ? "Waiting for approval" : "Linked"}
                           </Badge>
+                          {c.version_code === "V2" && <Badge tone="brand">V2</Badge>}
                         </div>
                         <p className="text-[13px] text-ink-2 mt-1.5">
                           {[
@@ -251,10 +261,21 @@ export function ParentChild() {
     return linked.find((c) => c.latest_assessment_id === selected)?.latest_assessment_id ?? linked[0]?.latest_assessment_id ?? null;
   }, [children_, selected]);
 
+  const activeChild = useMemo(
+    () => (children_ ?? []).find((c) => c.latest_assessment_id === activeAssessment) ?? null,
+    [children_, activeAssessment]
+  );
+  const isV2 = activeChild?.version_code === "V2";
+
+  const v2Summary = useAsyncData(async () => {
+    if (activeAssessment == null || !isV2) return null;
+    return await api.v2.parentSummary(activeAssessment);
+  }, [activeAssessment, isV2]);
+
   const dash = useAsyncData(async () => {
-    if (activeAssessment == null) return null;
+    if (activeAssessment == null || isV2) return null;
     return (await api.parent.child(activeAssessment)) as unknown as ParentChildDashboard;
-  }, [activeAssessment]);
+  }, [activeAssessment, isV2]);
 
   if (childrenError) {
     return (
@@ -300,7 +321,15 @@ export function ParentChild() {
         <ChildPicker children_={children_ ?? []} activeId={activeAssessment} onSelect={(_sid, aid) => setSelected(aid)} />
       </div>
 
-      {dash.loading || !d ? (
+      {isV2 ? (
+        <ParentV2SummaryView
+          childRow={activeChild}
+          summary={v2Summary.data ?? null}
+          loading={v2Summary.loading}
+          error={v2Summary.error?.message}
+          onRetry={v2Summary.reload}
+        />
+      ) : dash.loading || !d ? (
         <div className="mt-8 space-y-4">
           <SkeletonCard />
           <SkeletonCard lines={4} />
@@ -401,10 +430,16 @@ export function ParentAlignment() {
     return linked.find((c) => c.latest_assessment_id === selected)?.latest_assessment_id ?? linked[0]?.latest_assessment_id ?? null;
   }, [children_, selected]);
 
+  const activeChild = useMemo(
+    () => (children_ ?? []).find((c) => c.latest_assessment_id === activeAssessment) ?? null,
+    [children_, activeAssessment]
+  );
+  const isV2 = activeChild?.version_code === "V2";
+
   const dash = useAsyncData(async () => {
-    if (activeAssessment == null) return null;
+    if (activeAssessment == null || isV2) return null;
     return (await api.parent.child(activeAssessment)) as unknown as ParentChildDashboard;
-  }, [activeAssessment]);
+  }, [activeAssessment, isV2]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -486,7 +521,9 @@ export function ParentAlignment() {
             <ChildPicker children_={children_ ?? []} activeId={activeAssessment} onSelect={(_sid, aid) => setSelected(aid)} />
           </div>
 
-          {dash.loading || !d ? (
+          {isV2 && activeAssessment != null ? (
+            <ParentV2Module8Runner assessmentId={activeAssessment} studentName={activeChild?.full_name || "Your child"} />
+          ) : dash.loading || !d ? (
             <div className="mt-8">
               <SkeletonCard lines={4} />
             </div>
@@ -632,6 +669,11 @@ export function ParentReports() {
     return linked.find((c) => c.latest_assessment_id === selected)?.latest_assessment_id ?? linked[0]?.latest_assessment_id ?? null;
   }, [children_, selected]);
 
+  const activeChild = useMemo(
+    () => (children_ ?? []).find((c) => c.latest_assessment_id === activeAssessment) ?? null,
+    [children_, activeAssessment]
+  );
+
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-5 py-10">
@@ -646,7 +688,7 @@ export function ParentReports() {
     <div className="max-w-5xl mx-auto px-5 py-8 sm:py-10">
       <ParentHeader
         title="Reports"
-        sub="The same comprehensive guidance report your child sees — including a version tailored for parents."
+        sub="The same comprehensive guidance summary your child sees — tailored constructively for family conversations."
       />
       <div className="mt-6">
         <ChildPicker children_={children_ ?? []} activeId={activeAssessment} onSelect={(_sid, aid) => setSelected(aid)} />
@@ -657,10 +699,359 @@ export function ParentReports() {
             title="No reports yet"
             body="Reports appear here after your child completes their assessment."
           />
+        ) : activeChild?.version_code === "V2" ? (
+          <ParentV2ReportView assessmentId={activeAssessment} childRow={activeChild} />
         ) : (
           <ReportReader assessmentId={activeAssessment} allowedTypes={["parent", "candidate"]} initialType="parent" />
         )}
       </div>
     </div>
+  );
+}
+
+/* ============================================================
+   V2 PARENT MODULE 8 + PARENT-SAFE SUMMARY COMPONENTS
+   ============================================================ */
+
+function ParentV2SummaryView({
+  childRow,
+  summary,
+  loading,
+  error,
+  onRetry,
+}: {
+  childRow: ParentChildRow | null;
+  summary: V2ParentSummary | null;
+  loading: boolean;
+  error?: string;
+  onRetry: () => void;
+}) {
+  if (loading) return <div className="mt-8 space-y-4"><SkeletonCard /><SkeletonCard lines={4} /></div>;
+  if (error) return <div className="mt-6"><ErrorState message={error} onRetry={onRetry} /></div>;
+  if (!summary || !summary.available) {
+    return (
+      <div className="mt-6">
+        <EmptyState
+          title="V2 profile not ready yet"
+          body={summary?.reason || "Complete the assessment to see career cluster insights here."}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-8 space-y-5 fade-in">
+      <Card className="p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <Eyebrow>Student</Eyebrow>
+            <p className="font-display font-bold text-[19px] mt-1">{childRow?.full_name}</p>
+            <p className="text-[13px] text-ink-2 mt-0.5">
+              Grade {summary.grade} · RIASEC {summary.riasec_code} ·{" "}
+              {summary.norm_status === "final" ? "Norm calibrated" : "Provisional norms"}
+            </p>
+          </div>
+          <Badge tone="ok" dot>V2 Profile Ready</Badge>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <p className="font-semibold text-[15px]">Top 5 Career Clusters</p>
+        <p className="text-[12.5px] text-ink-3 mt-0.5 mb-4">
+          Conversation-focused directions across interest and reasoning — not rigid verdicts.
+        </p>
+        <div className="space-y-3">
+          {(summary.top_clusters || []).map((c) => (
+            <div key={c.id} className="rounded-[10px] border border-line p-3.5">
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <span className="text-[14px] font-semibold text-ink">{c.id} · {c.name}</span>
+                <span className="tnum text-[14px] font-bold text-brand">{c.final}%</span>
+              </div>
+              <Progress value={c.final} />
+              <p className="text-[12px] text-ink-3 mt-1.5">
+                Interest {c.interest}% · Aptitude {c.aptitude}% {c.stream10 ? `· Stream: ${c.stream10}` : ""}
+              </p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="font-semibold text-[15px]">Your Module 8 Observations</p>
+            <p className="text-[13px] text-ink-2 mt-1 max-w-lg leading-relaxed">
+              {summary.my_m8_status === "completed"
+                ? "Your Module 8 observations have been saved and help frame constructive family discussions."
+                : "Share what you notice in daily routines, hobbies, and strengths so discussions start from real observations."}
+            </p>
+          </div>
+          <Button onClick={() => (window.location.hash = "/parent/alignment")}>
+            {summary.my_m8_status === "completed" ? "Review / Update Module 8" : "Start Module 8"}
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function ParentV2Module8Runner({
+  assessmentId,
+  studentName,
+}: {
+  assessmentId: number;
+  studentName: string;
+}) {
+  const { pushToast } = useApp();
+  const m8Res = useAsyncData(async () => {
+    const [m8, summary] = await Promise.all([
+      api.v2.parentM8(assessmentId),
+      api.v2.parentSummary(assessmentId),
+    ]);
+    return { m8, summary };
+  }, [assessmentId]);
+
+  const [editing, setEditing] = useState(false);
+  const [idx, setIdx] = useState(0);
+  const [busyComplete, setBusyComplete] = useState(false);
+  const [localResp, setLocalResp] = useState<Record<string, V2ResponseValue> | null>(null);
+
+  if (m8Res.loading) return <div className="mt-8"><SkeletonCard lines={4} /></div>;
+  if (m8Res.error || !m8Res.data) {
+    return (
+      <div className="mt-6">
+        <ErrorState message={m8Res.error?.message || "Could not load Module 8."} onRetry={m8Res.reload} />
+      </div>
+    );
+  }
+
+  const m8: V2ParentM8Payload = m8Res.data.m8;
+  const summary: V2ParentSummary = m8Res.data.summary;
+  const responses = localResp ?? m8.responses ?? {};
+  const questions = m8.questions ?? [];
+  const answeredCount = questions.filter((q) => isV2Answered(q, responses[String(q.id)])).length;
+  const minRequired = Math.ceil(questions.length * 0.7);
+  const showSummaryView = m8.status === "completed" && !editing;
+
+  const saveAnswer = async (itemId: number, body: Record<string, unknown>, autoAdvance: boolean) => {
+    const nextLocal: V2ResponseValue = {
+      answer_key: body.answer_key != null ? String(body.answer_key) : undefined,
+      numeric_value: body.numeric_value != null ? Number(body.numeric_value) : undefined,
+      response_json: body.response_json,
+      response_text: typeof body.response_text === "string" ? body.response_text : undefined,
+    };
+    setLocalResp((prev) => ({ ...(prev ?? m8.responses ?? {}), [String(itemId)]: nextLocal }));
+    try {
+      await api.v2.saveParentM8Response(assessmentId, { item_id: itemId, ...body });
+      if (autoAdvance && idx < questions.length - 1) {
+        window.setTimeout(() => setIdx((c) => Math.min(questions.length - 1, c + 1)), 220);
+      }
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : "Could not save observation.", "bad");
+    }
+  };
+
+  const finishM8 = async () => {
+    setBusyComplete(true);
+    try {
+      await api.v2.completeParentM8(assessmentId);
+      pushToast("Module 8 observations saved — discussion starters updated.", "success");
+      setEditing(false);
+      m8Res.reload();
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : "Please answer more items before finishing.", "bad");
+    } finally {
+      setBusyComplete(false);
+    }
+  };
+
+  if (showSummaryView) {
+    const talking = summary.shared_talking_points || [];
+    return (
+      <div className="mt-8 space-y-5 fade-in">
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <Badge tone="ok" dot>Module 8 Completed</Badge>
+              <h2 className="font-display text-[20px] font-bold mt-2">
+                Your observations for {studentName}
+              </h2>
+              <p className="text-[13px] text-ink-2 mt-1">
+                Private to your parent account — conversations below focus strictly on constructive alignment.
+              </p>
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
+              Update observations
+            </Button>
+          </div>
+        </Card>
+
+        {talking.length > 0 ? (
+          <Card className="p-6">
+            <p className="font-semibold text-[16px] mb-3">Constructive Conversation Starters</p>
+            <div className="space-y-3.5">
+              {talking.map((t) => (
+                <div key={t.id} className="rounded-[12px] border border-line p-4">
+                  <p className="font-semibold text-[14.5px] text-ink">{t.title}</p>
+                  <p className="text-[13px] text-ink-2 mt-1">{t.meaning}</p>
+                  {t.talking_points && t.talking_points.length > 0 && (
+                    <ul className="mt-2 list-disc pl-5 text-[12.5px] text-ink-2 space-y-1">
+                      {t.talking_points.map((pt, i) => (
+                        <li key={i}>{pt}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-6">
+            <p className="text-[13.5px] text-ink-2">
+              Your Module 8 responses are recorded and will guide your counselling session with {studentName}.
+            </p>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  const currentItem = questions[idx];
+  return (
+    <div className="mt-8 space-y-5 fade-in">
+      <Card className="p-6">
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <Badge tone="brand">Parent Module 8 · Confidential Input</Badge>
+            <p className="text-[12.5px] text-ink-2 mt-1">
+              Answered {answeredCount} of {questions.length} items (at least {minRequired} needed to submit).
+            </p>
+          </div>
+          <span className="tnum font-display font-bold text-[14px]">
+            Item {idx + 1} / {questions.length}
+          </span>
+        </div>
+        <Progress value={Math.round((answeredCount / Math.max(questions.length, 1)) * 100)} />
+      </Card>
+
+      {currentItem && (
+        <Card className="p-6 sm:p-7">
+          {currentItem.sub && (
+            <Badge tone="neutral">{currentItem.sub.replace(/_/g, " ")}</Badge>
+          )}
+          <h3 className="font-display text-[19px] font-bold mt-3 leading-snug">
+            {currentItem.stem}
+          </h3>
+          <div className="mt-5">
+            <V2ItemInput
+              item={currentItem}
+              value={responses[String(currentItem.id)]}
+              onSave={(body, auto) => saveAnswer(currentItem.id, body, auto)}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3 mt-6 pt-4 border-t border-line flex-wrap">
+            <Button size="sm" variant="secondary" disabled={idx === 0} onClick={() => setIdx((i) => Math.max(0, i - 1))}>
+              Previous
+            </Button>
+            <div className="flex gap-2">
+              {idx < questions.length - 1 ? (
+                <Button size="sm" variant="secondary" onClick={() => setIdx((i) => Math.min(questions.length - 1, i + 1))}>
+                  Next item
+                </Button>
+              ) : null}
+              <Button
+                size="sm"
+                loading={busyComplete}
+                disabled={answeredCount < minRequired}
+                onClick={finishM8}
+              >
+                Submit Observations
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function ParentV2ReportView({
+  assessmentId,
+  childRow,
+}: {
+  assessmentId: number;
+  childRow: ParentChildRow;
+}) {
+  const res = useAsyncData(() => api.v2.parentSummary(assessmentId), [assessmentId]);
+  if (res.loading) return <SkeletonCard lines={5} />;
+  if (res.error || !res.data) {
+    return <ErrorState message={res.error?.message || "Could not load summary."} onRetry={res.reload} />;
+  }
+  const s = res.data;
+  if (!s.available) {
+    return <EmptyState title="Summary pending" body={s.reason || "Check back after assessment completion."} />;
+  }
+
+  return (
+    <Card className="p-6 sm:p-8 space-y-5">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <Badge tone="ok" dot>Parent Guidance Brief · Grade {s.grade}</Badge>
+          <h2 className="font-display text-[22px] font-bold mt-2">{childRow.full_name}</h2>
+          <p className="text-[13px] text-ink-2 mt-0.5">
+            RIASEC {s.riasec_code} · Norms: {s.norm_status}
+          </p>
+        </div>
+        <Button size="sm" variant="secondary" onClick={() => window.print()} className="print:hidden">
+          Print summary
+        </Button>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-[15px] mb-2">Top Career Clusters</h3>
+        <ul className="space-y-2 text-[13.5px]">
+          {(s.top_clusters || []).map((c) => (
+            <li key={c.id} className="rounded-[10px] border border-line px-3.5 py-2.5 flex justify-between">
+              <span className="font-medium">{c.name}</span>
+              <span className="tnum font-bold text-brand">{c.final}%</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {Number(s.grade) >= 11 && (s.courses_12?.length ?? 0) > 0 && (
+        <div>
+          <h3 className="font-semibold text-[15px] mb-2">Degree &amp; Entrance Notes</h3>
+          <p className="text-[12px] text-ink-3 mb-2">
+            Always verify entrance rules for the current year. Earning ladder figures show data verification status transparently.
+          </p>
+          <div className="space-y-2">
+            {s.courses_12?.slice(0, 3).map((c) => (
+              <div key={c.cluster_id} className="rounded-[10px] bg-paper p-3 text-[13px]">
+                <p className="font-semibold">{c.cluster_name}</p>
+                <p className="text-ink-2">{c.courses.join(" · ")}</p>
+                <p className="text-[11.5px] text-ink-3 mt-1">
+                  Exams: {c.exams.join(", ")} · Earning ladder: {c.earning_ladder || "Data verification pending"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {Number(s.grade) < 11 && (s.streams_10?.length ?? 0) > 0 && (
+        <div>
+          <h3 className="font-semibold text-[15px] mb-2">Grade 10 Stream Outlook</h3>
+          <div className="grid sm:grid-cols-2 gap-2.5">
+            {s.streams_10?.map((st) => (
+              <div key={st.id} className="rounded-[10px] bg-paper p-3 flex justify-between text-[13.5px]">
+                <span className="font-semibold">{st.name}</span>
+                <span className="tnum font-bold text-brand">{st.score}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }

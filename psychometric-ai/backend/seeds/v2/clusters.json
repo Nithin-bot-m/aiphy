@@ -1,0 +1,779 @@
+{
+ "C01": {
+  "name": "Engineering, Tech and AI",
+  "riasec": [
+   "R",
+   "I",
+   "C"
+  ],
+  "apt": {
+   "V": 0.05,
+   "N": 0.2,
+   "L": 0.3,
+   "S": 0.2,
+   "P": 0.1,
+   "CRE": 0.1,
+   "EQ": 0.05
+  },
+  "pers": {
+   "O": 1,
+   "C": 1
+  },
+  "values": [
+   "LRN",
+   "AUT",
+   "MON"
+  ],
+  "gem": false,
+  "careers": [
+   "Software Engineer",
+   "AI/ML Engineer",
+   "Robotics Engineer",
+   "Mechanical Engineer",
+   "Electronics/Embedded Engineer",
+   "Civil/Structural Engineer",
+   "Cybersecurity Analyst",
+   "Aerospace Engineer"
+  ],
+  "courses": [
+   "B.Tech/BE",
+   "B.Sc Computer Science",
+   "Diploma Engineering"
+  ],
+  "exams": [
+   "JEE Main/Advanced",
+   "State CET",
+   "BITSAT",
+   "CUET"
+  ],
+  "stream10": "Science (PCM)"
+ },
+ "C02": {
+  "name": "Medicine and Healthcare",
+  "riasec": [
+   "I",
+   "S",
+   "R"
+  ],
+  "apt": {
+   "V": 0.15,
+   "N": 0.1,
+   "L": 0.2,
+   "S": 0.1,
+   "P": 0.15,
+   "CRE": 0,
+   "EQ": 0.3
+  },
+  "pers": {
+   "C": 1,
+   "A": 1
+  },
+  "values": [
+   "HELP",
+   "STA",
+   "SEC"
+  ],
+  "gem": false,
+  "careers": [
+   "Doctor (MBBS)",
+   "Dentist",
+   "Physiotherapist",
+   "Nurse / Nurse Practitioner",
+   "Pharmacist",
+   "Radiology/Lab Technologist",
+   "Nutritionist/Dietitian",
+   "Public Health Specialist"
+  ],
+  "courses": [
+   "MBBS",
+   "BDS",
+   "BPT",
+   "B.Sc Nursing",
+   "B.Pharm",
+   "Allied Health Sciences"
+  ],
+  "exams": [
+   "NEET-UG",
+   "State health-science exams"
+  ],
+  "stream10": "Science (PCB)"
+ },
+ "C03": {
+  "name": "Business, Finance and Economics",
+  "riasec": [
+   "E",
+   "C",
+   "I"
+  ],
+  "apt": {
+   "V": 0.15,
+   "N": 0.3,
+   "L": 0.25,
+   "S": 0,
+   "P": 0.1,
+   "CRE": 0.05,
+   "EQ": 0.15
+  },
+  "pers": {
+   "C": 1,
+   "E": 1
+  },
+  "values": [
+   "MON",
+   "STA",
+   "AUT"
+  ],
+  "gem": false,
+  "careers": [
+   "Economist",
+   "Chartered Accountant",
+   "Investment/Financial Analyst",
+   "Actuary",
+   "Management Consultant",
+   "Marketing Manager",
+   "Banker",
+   "Data/Business Analyst"
+  ],
+  "courses": [
+   "B.Com",
+   "BBA/BMS",
+   "BA/B.Sc Economics",
+   "CA/CS/CMA",
+   "Actuarial Science"
+  ],
+  "exams": [
+   "CUET",
+   "CA Foundation",
+   "IPMAT",
+   "CMAT/NPAT"
+  ],
+  "stream10": "Commerce"
+ },
+ "C04": {
+  "name": "Law, Policy and Civil Services",
+  "riasec": [
+   "E",
+   "S",
+   "I"
+  ],
+  "apt": {
+   "V": 0.3,
+   "N": 0.05,
+   "L": 0.25,
+   "S": 0,
+   "P": 0.1,
+   "CRE": 0.1,
+   "EQ": 0.2
+  },
+  "pers": {
+   "E": 1,
+   "O": 1
+  },
+  "values": [
+   "STA",
+   "HELP",
+   "SEC"
+  ],
+  "gem": false,
+  "careers": [
+   "Lawyer",
+   "IAS/IPS/Civil Servant",
+   "Judicial Services Officer",
+   "Policy Analyst",
+   "Diplomat (IFS)",
+   "Corporate Counsel",
+   "Public Administrator",
+   "Political Strategist"
+  ],
+  "courses": [
+   "BA LLB / BBA LLB",
+   "BA (Pol Sci/History/Public Admin)",
+   "Integrated Law"
+  ],
+  "exams": [
+   "CLAT",
+   "AILET",
+   "CUET",
+   "UPSC (after graduation)"
+  ],
+  "stream10": "Arts/Humanities"
+ },
+ "C05": {
+  "name": "Design and Media",
+  "riasec": [
+   "A",
+   "R",
+   "E"
+  ],
+  "apt": {
+   "V": 0.1,
+   "N": 0,
+   "L": 0.05,
+   "S": 0.3,
+   "P": 0.1,
+   "CRE": 0.35,
+   "EQ": 0.1
+  },
+  "pers": {
+   "O": 2
+  },
+  "values": [
+   "CRE",
+   "AUT"
+  ],
+  "gem": true,
+  "careers": [
+   "Graphic/UI-UX Designer",
+   "Architect",
+   "Fashion Designer",
+   "Animator/VFX Artist",
+   "Film/Video Producer",
+   "Interior Designer",
+   "Product/Industrial Designer",
+   "Game Designer"
+  ],
+  "courses": [
+   "B.Des",
+   "B.Arch",
+   "BFA",
+   "B.Sc Animation/VFX",
+   "Fashion Design"
+  ],
+  "exams": [
+   "UCEED",
+   "NID DAT",
+   "NIFT",
+   "NATA/JEE Paper 2",
+   "CUET"
+  ],
+  "stream10": "Arts/Humanities or Vocational"
+ },
+ "C06": {
+  "name": "Education and Psychology",
+  "riasec": [
+   "S",
+   "A",
+   "I"
+  ],
+  "apt": {
+   "V": 0.25,
+   "N": 0.05,
+   "L": 0.1,
+   "S": 0,
+   "P": 0.1,
+   "CRE": 0.15,
+   "EQ": 0.35
+  },
+  "pers": {
+   "A": 1,
+   "E": 1
+  },
+  "values": [
+   "HELP",
+   "SEC",
+   "LRN"
+  ],
+  "gem": false,
+  "careers": [
+   "Psychologist/Counsellor",
+   "Teacher/Professor",
+   "Special Educator",
+   "Learning Designer/EdTech",
+   "School Counsellor",
+   "HR/Talent Development Specialist",
+   "Child Development Specialist",
+   "Speech/Occupational Therapist"
+  ],
+  "courses": [
+   "BA/B.Sc Psychology",
+   "B.Ed (integrated)",
+   "BA Education",
+   "Child Development"
+  ],
+  "exams": [
+   "CUET",
+   "NCET (integrated B.Ed)"
+  ],
+  "stream10": "Arts/Humanities"
+ },
+ "C07": {
+  "name": "Defence and Uniformed Services",
+  "riasec": [
+   "R",
+   "S",
+   "E"
+  ],
+  "apt": {
+   "V": 0.05,
+   "N": 0.15,
+   "L": 0.2,
+   "S": 0.1,
+   "P": 0.2,
+   "CRE": 0.05,
+   "EQ": 0.25
+  },
+  "pers": {
+   "C": 1,
+   "E": 1,
+   "N": 1
+  },
+  "values": [
+   "ADV",
+   "STA",
+   "SEC"
+  ],
+  "gem": false,
+  "careers": [
+   "Army Officer",
+   "Navy Officer",
+   "Air Force Officer/Pilot",
+   "Police Officer (IPS/State)",
+   "Central Armed Police Forces Officer",
+   "Merchant Navy Officer",
+   "Defence Scientist (DRDO)",
+   "Fire/Disaster Response Officer"
+  ],
+  "courses": [
+   "NDA route",
+   "CDS route",
+   "Merchant Navy courses",
+   "B.Sc/B.Tech then services"
+  ],
+  "exams": [
+   "NDA",
+   "CDS",
+   "AFCAT",
+   "CAPF",
+   "State police exams"
+  ],
+  "stream10": "Science (PCM) preferred, any stream for some entries"
+ },
+ "C08": {
+  "name": "Life Sciences and Research",
+  "riasec": [
+   "I",
+   "R",
+   "A"
+  ],
+  "apt": {
+   "V": 0.1,
+   "N": 0.2,
+   "L": 0.3,
+   "S": 0.1,
+   "P": 0.2,
+   "CRE": 0.05,
+   "EQ": 0.05
+  },
+  "pers": {
+   "O": 1,
+   "C": 1
+  },
+  "values": [
+   "LRN",
+   "AUT"
+  ],
+  "gem": false,
+  "careers": [
+   "Research Scientist",
+   "Biotechnologist",
+   "Geneticist",
+   "Chemist/Materials Scientist",
+   "Physicist/Astronomer",
+   "Microbiologist",
+   "Pharma R&D Scientist",
+   "Bioinformatics Specialist"
+  ],
+  "courses": [
+   "B.Sc (Physics/Chem/Bio/Maths)",
+   "Integrated MSc/BS-MS",
+   "B.Sc Biotechnology"
+  ],
+  "exams": [
+   "IISER IAT",
+   "NEST",
+   "CUET",
+   "KVPY-successor/state fellowships"
+  ],
+  "stream10": "Science (PCM or PCB)"
+ },
+ "C09": {
+  "name": "Environment, Nature and Wildlife",
+  "riasec": [
+   "R",
+   "I",
+   "S"
+  ],
+  "apt": {
+   "V": 0.1,
+   "N": 0.1,
+   "L": 0.2,
+   "S": 0.15,
+   "P": 0.15,
+   "CRE": 0.15,
+   "EQ": 0.15
+  },
+  "pers": {
+   "O": 1,
+   "A": 1
+  },
+  "values": [
+   "HELP",
+   "ADV",
+   "LRN"
+  ],
+  "gem": true,
+  "careers": [
+   "Wildlife Biologist",
+   "Conservation Scientist",
+   "Climate Analyst",
+   "Environmental Consultant",
+   "Marine Biologist",
+   "Forest Officer",
+   "Renewable Energy Specialist",
+   "Sustainability Manager"
+  ],
+  "courses": [
+   "B.Sc Environmental Science",
+   "B.Sc Forestry",
+   "B.Sc Zoology/Marine Biology",
+   "B.Tech Environmental/Renewable"
+  ],
+  "exams": [
+   "CUET",
+   "State forestry/agri exams",
+   "Indian Forest Service (after graduation)"
+  ],
+  "stream10": "Science (PCB)"
+ },
+ "C10": {
+  "name": "Animals and Veterinary",
+  "riasec": [
+   "R",
+   "I",
+   "S"
+  ],
+  "apt": {
+   "V": 0.1,
+   "N": 0.05,
+   "L": 0.25,
+   "S": 0.05,
+   "P": 0.2,
+   "CRE": 0.05,
+   "EQ": 0.3
+  },
+  "pers": {
+   "A": 1,
+   "C": 1
+  },
+  "values": [
+   "HELP",
+   "LRN"
+  ],
+  "gem": true,
+  "careers": [
+   "Veterinary Doctor",
+   "Wildlife Veterinarian",
+   "Animal Behaviourist",
+   "Zoo/Sanctuary Manager",
+   "Animal Nutritionist",
+   "Dairy/Poultry Scientist",
+   "Aquaculture Specialist",
+   "Animal Welfare Officer"
+  ],
+  "courses": [
+   "BVSc and AH",
+   "B.Sc Zoology/Animal Science",
+   "Fisheries Science",
+   "Dairy Technology"
+  ],
+  "exams": [
+   "NEET-UG (BVSc)",
+   "ICAR AIEEA",
+   "CUET"
+  ],
+  "stream10": "Science (PCB)"
+ },
+ "C11": {
+  "name": "Agriculture and Food Science",
+  "riasec": [
+   "R",
+   "I",
+   "E"
+  ],
+  "apt": {
+   "V": 0.1,
+   "N": 0.15,
+   "L": 0.2,
+   "S": 0.1,
+   "P": 0.2,
+   "CRE": 0.1,
+   "EQ": 0.15
+  },
+  "pers": {
+   "C": 1,
+   "O": 1
+  },
+  "values": [
+   "AUT",
+   "LRN",
+   "SEC"
+  ],
+  "gem": true,
+  "careers": [
+   "Agricultural Scientist",
+   "Food Technologist",
+   "Agri-Tech Entrepreneur",
+   "Horticulturist",
+   "Food Safety Officer",
+   "Agribusiness Manager",
+   "Soil/Water Scientist",
+   "Dairy/Plantation Manager"
+  ],
+  "courses": [
+   "B.Sc/B.Tech Agriculture",
+   "B.Tech Food Technology",
+   "B.Sc Horticulture",
+   "Agribusiness"
+  ],
+  "exams": [
+   "ICAR AIEEA",
+   "State CETs",
+   "CUET"
+  ],
+  "stream10": "Science (PCB or PCM)"
+ },
+ "C12": {
+  "name": "Social Impact and Public Service",
+  "riasec": [
+   "S",
+   "E",
+   "A"
+  ],
+  "apt": {
+   "V": 0.25,
+   "N": 0.1,
+   "L": 0.1,
+   "S": 0,
+   "P": 0.1,
+   "CRE": 0.1,
+   "EQ": 0.35
+  },
+  "pers": {
+   "A": 2
+  },
+  "values": [
+   "HELP",
+   "SEC"
+  ],
+  "gem": true,
+  "careers": [
+   "Social Worker",
+   "NGO/Programme Manager",
+   "Development Economist",
+   "Public Health Worker",
+   "CSR Manager",
+   "Community Organiser",
+   "Human Rights Advocate",
+   "Disaster Relief Coordinator"
+  ],
+  "courses": [
+   "BSW/MSW",
+   "BA Development Studies/Sociology",
+   "Public Policy programmes"
+  ],
+  "exams": [
+   "CUET",
+   "University entrance tests (TISS-BAT etc.)"
+  ],
+  "stream10": "Arts/Humanities"
+ },
+ "C13": {
+  "name": "Sports, Fitness and Wellness",
+  "riasec": [
+   "R",
+   "S",
+   "E"
+  ],
+  "apt": {
+   "V": 0.05,
+   "N": 0.05,
+   "L": 0.15,
+   "S": 0.15,
+   "P": 0.25,
+   "CRE": 0.1,
+   "EQ": 0.25
+  },
+  "pers": {
+   "E": 1,
+   "C": 1
+  },
+  "values": [
+   "ADV",
+   "HELP"
+  ],
+  "gem": true,
+  "careers": [
+   "Professional Athlete",
+   "Sports Coach",
+   "Sports Scientist",
+   "Sports Physiotherapist",
+   "Fitness/Wellness Entrepreneur",
+   "Sports Analyst",
+   "Sports Manager",
+   "Yoga/Wellness Therapist"
+  ],
+  "courses": [
+   "BPEd/B.Sc Sports Science",
+   "Sports Management",
+   "Yoga Science",
+   "BPT (sports)"
+  ],
+  "exams": [
+   "CUET",
+   "Sports university entrance and trials"
+  ],
+  "stream10": "Any stream / Vocational"
+ },
+ "C14": {
+  "name": "Writing, Languages and Journalism",
+  "riasec": [
+   "A",
+   "S",
+   "E"
+  ],
+  "apt": {
+   "V": 0.4,
+   "N": 0,
+   "L": 0.1,
+   "S": 0,
+   "P": 0.1,
+   "CRE": 0.25,
+   "EQ": 0.15
+  },
+  "pers": {
+   "O": 1
+  },
+  "values": [
+   "CRE",
+   "AUT",
+   "LRN"
+  ],
+  "gem": true,
+  "careers": [
+   "Journalist",
+   "Author/Content Writer",
+   "Translator/Interpreter",
+   "Editor/Publisher",
+   "Copywriter",
+   "Linguist",
+   "Screenwriter",
+   "Podcaster/Media Host"
+  ],
+  "courses": [
+   "BA English/Languages",
+   "BA Journalism and Mass Communication",
+   "Creative Writing"
+  ],
+  "exams": [
+   "CUET",
+   "IIMC/university entrance tests"
+  ],
+  "stream10": "Arts/Humanities"
+ },
+ "C15": {
+  "name": "Hospitality and Travel",
+  "riasec": [
+   "E",
+   "S",
+   "R"
+  ],
+  "apt": {
+   "V": 0.2,
+   "N": 0.1,
+   "L": 0.1,
+   "S": 0,
+   "P": 0.15,
+   "CRE": 0.1,
+   "EQ": 0.35
+  },
+  "pers": {
+   "E": 1,
+   "A": 1
+  },
+  "values": [
+   "ADV",
+   "MON"
+  ],
+  "gem": true,
+  "careers": [
+   "Hotel Manager",
+   "Chef",
+   "Event Planner",
+   "Travel Entrepreneur",
+   "Aviation Services/Cabin Crew",
+   "Tourism Manager",
+   "Food and Beverage Manager",
+   "Resort/Cruise Operations Manager"
+  ],
+  "courses": [
+   "BHM/Hotel Management",
+   "BBA Tourism/Aviation",
+   "Culinary Arts",
+   "Event Management"
+  ],
+  "exams": [
+   "NCHM JEE",
+   "CUET",
+   "University tests"
+  ],
+  "stream10": "Any stream / Vocational"
+ },
+ "C16": {
+  "name": "Entrepreneurship",
+  "riasec": [
+   "E",
+   "A",
+   "I"
+  ],
+  "apt": {
+   "V": 0.1,
+   "N": 0.2,
+   "L": 0.2,
+   "S": 0,
+   "P": 0.1,
+   "CRE": 0.2,
+   "EQ": 0.2
+  },
+  "pers": {
+   "E": 1,
+   "O": 1
+  },
+  "values": [
+   "AUT",
+   "MON",
+   "ADV"
+  ],
+  "gem": false,
+  "careers": [
+   "Startup Founder",
+   "Business Owner",
+   "Product Manager",
+   "Sales/Growth Head",
+   "Franchise Owner",
+   "Social Entrepreneur",
+   "Venture Analyst",
+   "Creator-Business Owner"
+  ],
+  "courses": [
+   "BBA (Entrepreneurship)",
+   "B.Com",
+   "Any degree plus incubator/startup programmes"
+  ],
+  "exams": [
+   "CUET",
+   "IPMAT",
+   "University tests"
+  ],
+  "stream10": "Commerce (any stream possible)"
+ }
+}

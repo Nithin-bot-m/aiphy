@@ -76,12 +76,28 @@ exports.getCandidates = asyncHandler(async (req, res) => {
     SELECT s.id, s.full_name, s.grade, s.school_name, s.board, s.student_code, s.is_demo, s.created_at,
            u.email, u.phone,
            (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1) AS latest_completed_assessment_id,
+           (SELECT av.version_code FROM assessments a JOIN assessment_versions av ON a.version_id = av.id WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1) AS version_code,
            (SELECT ss.stream_name FROM stream_scores ss WHERE ss.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1) AND ss.rank_order = 1) AS top_stream,
-           (SELECT cs.congruence_pct FROM congruence_scores cs WHERE cs.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1)) AS congruence_pct
+           (SELECT cs.congruence_pct FROM congruence_scores cs WHERE cs.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1)) AS congruence_pct,
+           (SELECT v2r.summary_json FROM v2_scoring_results v2r WHERE v2r.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1)) AS v2_summary_json,
+           (SELECT v2m.status FROM v2_counsellor_maps v2m WHERE v2m.assessment_id = (SELECT a.id FROM assessments a WHERE a.student_id = s.id AND a.status = 'completed' ORDER BY a.id DESC LIMIT 1)) AS counsellor_map_status
     FROM students s JOIN users u ON s.user_id = u.id
     ORDER BY s.id DESC
   `).all();
-  res.json({ candidates: rows });
+  const candidates = rows.map(({ v2_summary_json, ...rest }) => {
+    let v2Summary = null;
+    if (v2_summary_json) {
+      try { v2Summary = JSON.parse(v2_summary_json); } catch { /* ignore */ }
+    }
+    const v2TopCluster = v2Summary?.top5?.[0] || null;
+    return {
+      ...rest,
+      top_stream: rest.top_stream || v2Summary?.streams_10?.[0]?.name || v2TopCluster || null,
+      v2_riasec_code: v2Summary?.riasec_code || null,
+      v2_top_clusters: v2Summary?.top5 || null
+    };
+  });
+  res.json({ candidates });
 });
 
 // ---------- Question bank ----------

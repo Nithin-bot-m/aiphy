@@ -9,6 +9,7 @@ const bcrypt = require('bcryptjs');
 const { db, transaction } = require('../src/config/db');
 const env = require('../src/config/env');
 const { buildQuestionBank } = require('./questionBank');
+const { seedV2Bank } = require('./seedV2Bank');
 const { STREAM_PROFILES } = require('./streamProfiles');
 const { PROMPT_SEEDS } = require('./promptSeeds');
 const { runMigrations } = require('../migrations/migrate');
@@ -207,6 +208,7 @@ async function seedDatabase() {
   await seedScoringRules(versionId);
   await seedScoringConfig();
   await seedPrompts();
+  await seedV2Bank();
   await seedDemoData(versionId);
   // PRIVACY: never log credentials — not even demo ones. Documented in README.
   console.log('[seed] done. Demo accounts (if enabled):');

@@ -19,8 +19,9 @@ import {
   EmptyState,
 } from "@/components/psych/ui";
 import { ExplainabilityPanel, StreamCard } from "@/components/psych/dataviz";
+import { V2ExploreView } from "@/components/psych/v2-results";
 import { contributionLabel } from "@/lib/format";
-import type { CanonicalResult, ResultsPayload, StreamResult } from "@/lib/types";
+import type { CanonicalResult, ResultsPayload, StreamResult, V2ResultEnvelope } from "@/lib/types";
 
 interface CareerArea {
   cluster: string;
@@ -51,11 +52,24 @@ function buildCareerAreas(result: CanonicalResult): CareerArea[] {
 export default function Explore() {
   const [whyStream, setWhyStream] = useState<StreamResult | null>(null);
   const res = useAsyncData(async () => {
-    const data = (await api.candidate.results()) as ResultsPayload | null;
-    return data;
+    const [v2, v1] = await Promise.all([
+      api.v2.myResults().catch(() => null),
+      api.candidate.results().catch(() => null) as Promise<ResultsPayload | null>,
+    ]);
+    return { v2, v1 };
   }, []);
 
-  const result = res.data?.result as CanonicalResult | undefined;
+  const v2Envelope =
+    res.data?.v2?.available && res.data.v2.result && res.data.v2.assessment_id
+      ? ({
+          assessment_id: res.data.v2.assessment_id,
+          completed_at: res.data.v2.completed_at,
+          version_code: res.data.v2.version_code,
+          result: res.data.v2.result,
+        } as V2ResultEnvelope)
+      : null;
+
+  const result = res.data?.v1?.result as CanonicalResult | undefined;
   const streams = useMemo(
     () => (result ? [...result.streams].sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99)) : []),
     [result]
@@ -79,6 +93,15 @@ export default function Explore() {
       <div className="max-w-2xl mx-auto px-5 py-12">
         <ErrorState message={res.error.message} onRetry={res.reload} />
       </div>
+    );
+  }
+
+  if (v2Envelope) {
+    return (
+      <V2ExploreView
+        envelope={v2Envelope}
+        onOpenResults={() => window.location.assign("#/results")}
+      />
     );
   }
 

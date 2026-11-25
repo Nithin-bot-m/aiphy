@@ -5,6 +5,7 @@ const candidateController = require('../controllers/candidateController');
 const parentController = require('../controllers/parentController');
 const adminController = require('../controllers/adminController');
 const reportController = require('../controllers/reportController');
+const v2Controller = require('../controllers/v2Controller');
 const { authenticate, requireRole, requireAssessmentOwnership, requireLinkedParentForAssessment, requireReportAccess } = require('../middleware/authMiddleware');
 const { authLimiter, otpLimiter, linkLimiter } = require('../middleware/rateLimiters');
 
@@ -112,5 +113,23 @@ router.get('/admin/llm/usage', authenticate, requireRole('admin'), adminControll
 router.post('/admin/retention/run', authenticate, requireRole('admin'), adminController.runRetention);
 router.get('/admin/users/:id/export', authenticate, requireRole('admin'), adminController.exportUserData);
 router.post('/admin/users/:id/erase', authenticate, requireRole('admin'), adminController.eraseUserData);
+
+// ---------- V2 Assessment, Parent Module 8 & Counsellor Mapping Console ----------
+router.post('/v2/assessments/start', authenticate, requireRole('candidate'), v2Controller.startAssessment);
+router.get('/v2/assessments/:assessmentId', authenticate, requireAssessmentOwnership('assessmentId'), v2Controller.getQuestions);
+router.post('/v2/assessments/:assessmentId/responses', authenticate, requireRole('candidate'), requireAssessmentOwnership('assessmentId'), v2Controller.saveResponse);
+router.post('/v2/assessments/:assessmentId/complete', authenticate, requireRole('candidate'), requireAssessmentOwnership('assessmentId'), v2Controller.completeAssessment);
+router.post('/v2/assessments/:assessmentId/parent-consent', authenticate, requireRole('candidate'), requireAssessmentOwnership('assessmentId'), v2Controller.setParentConsentSensitive);
+router.get('/v2/results', authenticate, requireRole('candidate'), v2Controller.getMyLatestResult);
+router.get('/v2/results/:assessmentId', authenticate, requireAssessmentOwnership('assessmentId'), v2Controller.getResultByAssessment);
+
+router.get('/v2/parent/m8/:assessmentId', authenticate, requireRole('parent'), requireLinkedParentForAssessment('assessmentId'), v2Controller.getParentM8);
+router.post('/v2/parent/m8/:assessmentId/responses', authenticate, requireRole('parent'), requireLinkedParentForAssessment('assessmentId'), v2Controller.saveParentM8Response);
+router.post('/v2/parent/m8/:assessmentId/complete', authenticate, requireRole('parent'), requireLinkedParentForAssessment('assessmentId'), v2Controller.completeParentM8);
+router.get('/v2/parent/summary/:assessmentId', authenticate, requireRole('parent'), requireLinkedParentForAssessment('assessmentId'), v2Controller.getParentSummary);
+
+router.get('/v2/admin/counsellor-map/:assessmentId', authenticate, requireRole('admin'), v2Controller.getCounsellorMap);
+router.post('/v2/admin/counsellor-map/:assessmentId/generate', authenticate, requireRole('admin'), v2Controller.generateCounsellorMap);
+router.get('/v2/admin/fairness-audit', authenticate, requireRole('admin'), v2Controller.getFairnessAudit);
 
 module.exports = router;
