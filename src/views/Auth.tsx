@@ -8,13 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import { useApp, useRoute } from "@/lib/AppContext";
-import { Button, Card, Field, Input, Select, Wordmark, Badge, Modal } from "@/components/psych/ui";
-
-const DEMO_ACCOUNTS = [
-  { role: "Student", id: "aarav@demo.psychometric-ai.local" },
-  { role: "Parent", id: "sunita@demo.psychometric-ai.local" },
-  { role: "Admin", id: "admin@demo.psychometric-ai.local" },
-];
+import { Button, Card, Field, Input, Select, Wordmark, Modal } from "@/components/psych/ui";
 
 function AuthAside({ onHome }: { onHome: () => void }) {
   return (
@@ -108,12 +102,12 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
     navigate(r === "admin" ? "/admin" : r === "parent" ? "/parent" : "/home");
   };
 
-  const doLogin = async (e?: React.FormEvent, overrideId?: string) => {
-    e?.preventDefault();
+  const doLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setFormError(null);
     setBusy(true);
     try {
-      const u = await (overrideId ? signIn(overrideId, "Demo@12345") : signIn(fields.identifier.trim(), fields.password));
+      const u = await signIn(fields.identifier.trim(), fields.password);
       pushToast(`Welcome back.`, "success");
       afterAuth(u.role);
     } catch (err) {
@@ -533,30 +527,6 @@ export function AuthScreen({ mode, sessionExpired }: { mode: "login" | "register
               </>
             )}
           </p>
-
-          {mode === "login" && (
-            <Card className="mt-8 p-4.5 px-5 py-4">
-              <div className="flex items-center justify-between">
-                <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-ink-3">Demo environment</p>
-                <Badge tone="neutral">Demo@12345</Badge>
-              </div>
-              <div className="mt-2.5 space-y-1.5">
-                {DEMO_ACCOUNTS.map((a) => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    onClick={() => doLogin(undefined, a.id)}
-                    disabled={busy}
-                    className="w-full flex items-center justify-between rounded-[9px] px-3 py-2 hover:bg-paper transition-colors cursor-pointer text-left disabled:opacity-50"
-                  >
-                    <span className="text-[13px] font-semibold text-ink">{a.role}</span>
-                    <span className="text-[12px] text-ink-3 truncate ml-3">{a.id}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="text-[11.5px] text-ink-3 mt-2.5">One click signs in with the demo password.</p>
-            </Card>
-          )}
 
           <Modal open={forgotOpen} onClose={() => setForgotOpen(false)} title="Account Recovery">
             <div className="space-y-4">
