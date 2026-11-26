@@ -33,9 +33,18 @@ const env = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
 
   LLM_PROVIDER: (process.env.LLM_PROVIDER || '').toLowerCase(),
-  // gemini-2.0-flash was RETIRED by Google (API returns 404 advising
-  // gemini-3.8-flash) — new deployments default to the current flash model.
-  LLM_MODEL: process.env.LLM_MODEL || 'gemini-2.5-flash',
+  // gemini-2.0-flash was retired and gemini-3.8-flash does not exist in the
+  // Gemini API; normalize both so stale Render env vars never fail with 404.
+  LLM_MODEL: (() => {
+    const raw = (process.env.LLM_MODEL || '').trim();
+    if (!raw || raw === 'gemini-3.8-flash' || raw === 'gemini-2.0-flash') {
+      if (raw && process.env.NODE_ENV !== 'test') {
+        console.warn(`[env] replacing invalid/retired LLM_MODEL="${raw}" with "gemini-2.5-flash"`);
+      }
+      return 'gemini-2.5-flash';
+    }
+    return raw;
+  })(),
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   // Optional relay/proxy base URL (e.g. https://my-relay.example.com).
   // Servers in regions where the Gemini API is geo-restricted can point this

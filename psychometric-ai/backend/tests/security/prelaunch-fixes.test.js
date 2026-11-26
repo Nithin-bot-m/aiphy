@@ -245,6 +245,12 @@ test('F-02: LLM fallback reports offline-template-v1 model instead of unreachabl
     });
     assert.strictEqual(out.status, 'fallback');
     assert.strictEqual(out.model, 'offline-template-v1');
+
+    // Recent fallback reason must be visible to admins instead of failing silently
+    const usage = await api(ctx.baseUrl, 'GET', '/admin/llm/usage', { token: adminToken });
+    assert.strictEqual(usage.status, 200);
+    assert.ok(Array.isArray(usage.json.recent_failures) && usage.json.recent_failures.length >= 1);
+    assert.ok(usage.json.recent_failures[0].error_message, 'fallback error_message should be recorded');
   } finally {
     env.LLM_PROVIDER = origProvider;
     env.LLM_MODEL = origModel;

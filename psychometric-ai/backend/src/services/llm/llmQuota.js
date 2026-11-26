@@ -14,6 +14,7 @@ const env = require('../../config/env');
 const { db } = require('../../config/db');
 
 const DEFAULT_PRICES = {
+  'gemini-2.5-flash': { input_per_1k: 0.00015, output_per_1k: 0.0006 },
   'gemini-2.0-flash': { input_per_1k: 0.01, output_per_1k: 0.04 },
   'gpt-4o-mini': { input_per_1k: 0.00015, output_per_1k: 0.0006 },
 };
@@ -32,8 +33,8 @@ function parseTokens(tokenUsageJson) {
   if (!tokenUsageJson) return { input: 0, output: 0 };
   try {
     const u = JSON.parse(tokenUsageJson);
-    // Gemini: promptTokensCount/candidatesTokenCount; OpenAI: prompt_tokens/completion_tokens
-    const input = Number(u.promptTokensCount ?? u.prompt_tokens ?? u.input_tokens ?? 0) || 0;
+    // Gemini: promptTokenCount/candidatesTokenCount; OpenAI: prompt_tokens/completion_tokens
+    const input = Number(u.promptTokenCount ?? u.promptTokensCount ?? u.prompt_tokens ?? u.input_tokens ?? 0) || 0;
     const output = Number(u.candidatesTokenCount ?? u.completion_tokens ?? u.output_tokens ?? 0) || 0;
     return { input, output };
   } catch {
@@ -124,6 +125,13 @@ async function getUsageSummary() {
     GROUP BY day ORDER BY day DESC LIMIT 14
   `).all(new Date(Date.now() - 13 * 86400_000).toISOString().slice(0, 10) + ' 00:00:00');
 
+  const recentFailureRows = await db.prepare(`
+    SELECT q.model_name, q.report_type, q.created_at, r.status, r.error_message
+    FROM llm_requests q LEFT JOIN llm_responses r ON r.request_id = q.id
+    WHERE q.provider IN ('gemini', 'openai') AND r.status != 'success'
+    ORDER BY q.id DESC LIMIT 5
+  `).all();
+
   return {
     today: {
       requests: Number(todayRow?.requests || 0),
@@ -139,6 +147,7 @@ async function getUsageSummary() {
       monthly_token_budget: env.LLM_MONTHLY_TOKEN_BUDGET || null
     },
     by_day: byDayRows.map(r => ({ day: r.day, requests: Number(r.requests), successes: Number(r.successes) })),
+    recent_failures: recentFailureRows,
     provider: env.LLM_PROVIDER,
     model: env.LLM_MODEL
   };

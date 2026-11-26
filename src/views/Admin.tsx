@@ -1038,6 +1038,7 @@ type LlmUsage = {
   today?: { requests?: number; successes?: number; avg_latency_ms?: number; daily_request_limit?: number | null };
   month?: { requests?: number; tokens_input?: number; tokens_output?: number; estimated_cost_usd?: number; monthly_token_budget?: number | null };
   by_day?: { day: string; requests: number; successes: number }[];
+  recent_failures?: Array<{ model_name?: string; report_type?: string; created_at?: string; status?: string; error_message?: string | null }>;
   provider?: string;
   model?: string;
 };
@@ -1084,6 +1085,20 @@ function UsageAndQuota() {
             <p className="text-[19px] font-bold tabular-nums text-ink">{fmt(u?.today?.avg_latency_ms)} <span className="text-[11px] font-medium text-ink-2">ms</span></p>
             <p className="text-[11px] text-ink-2">quota skips fall back offline</p>
           </div>
+          {u?.recent_failures && u.recent_failures.length > 0 && (
+            <div className="col-span-2 md:col-span-4 mt-2 rounded-[10px] border border-[#EBDDBB] bg-warn-soft/45 px-3.5 py-2.5 text-[12px]">
+              <p className="font-semibold text-warn mb-1">Recent upstream fallbacks</p>
+              <ul className="space-y-0.5 text-ink-2">
+                {u.recent_failures.slice(0, 3).map((f, idx) => (
+                  <li key={idx} className="truncate">
+                    <span className="tnum text-ink-3">{f.created_at ? fmtDateTime(f.created_at) : "—"}</span> ·{" "}
+                    <span className="font-semibold">{f.report_type ?? "report"}</span>:{" "}
+                    {f.error_message || f.status || "fallback"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </Card>

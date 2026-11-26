@@ -40,13 +40,17 @@ async function geminiComplete({ systemPrompt, userPrompt, model, apiKey, timeout
     if (err instanceof ProviderError) throw err;
     throw new ProviderError(`Gemini request failed: ${err.message}`, { provider: 'gemini', cause: err });
   }
-  const text = json?.candidates?.[0]?.content?.parts?.map(p => p.text).filter(Boolean).join('\n') || '';
-  if (!text) throw new ProviderError('Gemini returned an empty completion', { provider: 'gemini' });
+  const parts = json?.candidates?.[0]?.content?.parts || [];
+  const text = parts.filter(p => !p.thought && p.text).map(p => p.text).join('\n') || '';
+  const finishReason = json?.candidates?.[0]?.finishReason || null;
+  if (!text) {
+    throw new ProviderError(`Gemini returned an empty completion (${finishReason || 'unknown finishReason'})`, { provider: 'gemini' });
+  }
   return {
     text,
     model,
     tokenUsage: json?.usageMetadata || null,
-    finishReason: json?.candidates?.[0]?.finishReason || null
+    finishReason
   };
 }
 

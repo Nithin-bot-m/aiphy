@@ -207,6 +207,9 @@ async function generateNarrative({ reportType, promptRow, userPrompt, structured
   }
 
   if (!outcome.text) {
+    if (provider !== 'offline') {
+      console.warn(`[llmService] ${provider}/${model} fell back to offline-template-v1 (${outcome.error || 'empty completion'})`);
+    }
     outcome.text = buildOfflineNarrative(reportType, structuredResult);
     outcome.status = provider === 'offline' ? 'success' : 'fallback';
   }
